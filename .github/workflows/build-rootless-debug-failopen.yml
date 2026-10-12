@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - fix/audio-failopen-debug-20261012
+      - viper-extras
+  pull_request:
+    branches:
+      - viper-extras
   workflow_dispatch:
 
 permissions:
