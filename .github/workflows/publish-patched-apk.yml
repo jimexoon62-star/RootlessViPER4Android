@@ -1,0 +1,55 @@
+name: Publish patched RootlessViPER4Android APK
+
+on:
+  push:
+    branches:
+      - fix/audio-failopen-debug-20261012
+    paths:
+      - '.github/workflows/publish-patched-apk.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish-verified-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Download APK from successful verified build
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          gh run download 38220472293 --name RootlessViPER4Android-patched-DEBUG-APKs --dir dist
+
+      - name: Select arm64 APK and verify checksum
+        shell: bash
+        run: |
+          set -euo pipefail
+          src="dist/ViPER4Android-v4.0.0-rootless-fdroid-arm64-v8a-debug.apk"
+          test -s "$src"
+          cp "$src" "RootlessViPER4Android-patched-arm64-debug.apk"
+          expected="ffedce38c5f42e59d12b05fb185428e83bfbe2f0f8c9469763230d448c54cb0a"
+          actual=$(sha256sum "RootlessViPER4Android-patched-arm64-debug.apk" | awk '{print $1}')
+          echo "Expected: $expected"
+          echo "Actual: $actual"
+          test "$actual" = "$expected"
+
+      - name: Publish public pre-release APK
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: rv4a-v4.0.0-failopen-debug-20261012
+        run: |
+          set -euo pipefail
+          gh release create "$TAG" "./RootlessViPER4Android-patched-arm64-debug.apk" \
+            --target "$GITHUB_SHA" \
+            --title "RootlessViPER4Android v4.0.0 — Experimental Audio Recovery (Debug)" \
+            --notes "Experimental ARM64 debug build of the original RootlessViPER4Android app, with audio fail-open safeguards. Built and Android APK signature verified by GitHub Actions run 38220472293. SHA-256: ffedce38c5f42e59d12b05fb185428e83bfbe2f0f8c9469763230d448c54cb0a. Not validated on the user's device. Back up configuration and stop the standard app before enabling the debug version. The debug APK has an independent package identity and will not replace or update your original app." \
+            --prerelease
+          gh release view "$TAG" --json url,assets
