@@ -116,15 +116,14 @@ Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_alloc(JNIEnv *e
 
 
     auto* _dsp = (JamesDSPLib*)malloc(sizeof(JamesDSPLib));
-    memset(_dsp, 0, sizeof(JamesDSPLib));
-
     if(!_dsp)
     {
         LOGE("JamesDspWrapper::ctor: Failed to allocate memory for libjamesdsp class object");
         delete self;
-        return 1;
+        return 0;
     }
 
+    memset(_dsp, 0, sizeof(JamesDSPLib));
     JamesDSPGlobalMemoryAllocation();
     JamesDSPInit(_dsp, 128, 48000);
 
@@ -133,9 +132,10 @@ Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_alloc(JNIEnv *e
         LOGE("JamesDspWrapper::ctor: JamesDSPGetMutexStatus returned false. "
                     "Cannot run safely in multi-threaded environment.");
         JamesDSPFree(_dsp);
+        free(_dsp);
         JamesDSPGlobalMemoryDeallocation();
         delete self;
-        return 2;
+        return 0;
     }
 
     self->dsp = _dsp;
@@ -316,7 +316,7 @@ Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_processInt8U24(
     if (input == nullptr || output == nullptr) {
         if (input != nullptr) env->ReleaseIntArrayElements(inputObj, input, JNI_ABORT);
         if (output != nullptr) env->ReleaseIntArrayElements(outputObj, output, JNI_ABORT);
-        return;
+        return nullptr;
     }
     dsp->processInt8_24Multiplexd(dsp, input, output, inputLength / 2);
     env->ReleaseIntArrayElements(inputObj, input, JNI_ABORT);

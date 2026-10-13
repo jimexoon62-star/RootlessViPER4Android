@@ -1,4 +1,4 @@
-﻿package me.timschneeberger.rootlessjamesdsp.interop
+package me.timschneeberger.rootlessjamesdsp.interop
 
 import android.content.Context
 import android.content.Intent
@@ -23,6 +23,7 @@ class JamesDspLocalEngine(context: Context, callbacks: JamesDspWrapper.JamesDspC
     override var enabled: Boolean = true
 
     init {
+        check(handle != 0L) { "Native DSP allocation failed" }
         if(BenchmarkManager.hasBenchmarksCached())
             BenchmarkManager.loadBenchmarksFromCache()
     }
