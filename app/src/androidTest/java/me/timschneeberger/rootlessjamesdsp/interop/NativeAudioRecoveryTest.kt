@@ -10,6 +10,15 @@ import kotlin.math.sin
 /** Must be executed on Android; compilation is not an execution result. */
 @RunWith(AndroidJUnit4::class)
 class NativeAudioRecoveryTest {
+    @Test fun applicationDiagnosticsArePersistedAndExportable() {
+        val context = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext
+        val marker = "DIAGNOSTIC_EXPORT_REGRESSION_${System.nanoTime()}"
+        timber.log.Timber.i(marker)
+        val exported = me.timschneeberger.rootlessjamesdsp.utils.AudioDiagnosticLog.snapshot(context)
+        assertTrue(exported.contains("DIAGNOSTIC_START"))
+        assertTrue(exported.contains(marker))
+        assertTrue(java.io.File(context.filesDir, "audio-diagnostics.log").exists())
+    }
     private val callbacks = object : JamesDspWrapper.JamesDspCallbacks {
         override fun onLiveprogOutput(message: String) {}
         override fun onLiveprogExec(id: String) {}
