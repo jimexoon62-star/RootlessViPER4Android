@@ -101,3 +101,8 @@ target_link_options(jamesdsp_hal PRIVATE
 set_target_properties(jamesdsp_hal PROPERTIES
         OUTPUT_NAME jamesdsp
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/hal")
+
+# Mandatory native imports must be satisfied at link time.
+foreach(native_target jamesdsp jamesdsp-wrapper jdspimprestoolbox crashlytics-connector)
+    target_link_options(${native_target} PRIVATE -Wl,--no-undefined -Wl,-z,max-page-size=16384 -Wl,-z,noexecstack)
+endforeach()

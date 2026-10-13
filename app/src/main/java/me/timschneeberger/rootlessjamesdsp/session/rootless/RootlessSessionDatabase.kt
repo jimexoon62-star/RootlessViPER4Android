@@ -51,6 +51,8 @@ class RootlessSessionDatabase(context: Context) : BaseSessionDatabase(context) {
     override fun onSessionRemoved(item: IEffectSession) {
         (item as MutedEffectSession).run {
             try {
+                audioMuteEffect?.setEnableStatusListener(null)
+                audioMuteEffect?.setControlStatusListener(null)
                 audioMuteEffect?.enabled = false
                 audioMuteEffect?.release()
             }

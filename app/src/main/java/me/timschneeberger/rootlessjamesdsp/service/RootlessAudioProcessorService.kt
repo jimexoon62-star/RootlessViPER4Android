@@ -20,6 +20,7 @@ import android.media.projection.MediaProjectionManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.os.Process
 import androidx.annotation.RequiresApi
 import androidx.core.content.getSystemService
@@ -61,7 +62,7 @@ import me.timschneeberger.rootlessjamesdsp.utils.preferences.Preferences
 import me.timschneeberger.rootlessjamesdsp.utils.sdkAbove
 import org.koin.android.ext.android.inject
 import timber.log.Timber
-import java.io.IOException
+import java.util.concurrent.atomic.AtomicBoolean
 
 
 @RequiresApi(Build.VERSION_CODES.Q)
@@ -76,7 +77,7 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
     private var mediaProjectionStartIntent: Intent? = null
 
     // Processing
-    private var recreateRecorderRequested = false
+    @Volatile private var recreateRecorderRequested = false
     private var recorderThread: Thread? = null
     private lateinit var engine: JamesDspLocalEngine
     private val isRunning: Boolean
@@ -90,14 +91,6 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
 
     // Idle detection
     private var isProcessorIdle = false
-    /** Seconds of continuous digital silence seen by the capture thread. */
-    private var silenceGateSecs = 0.0
-
-    /** Returns true while the silence gate should keep the DSP chain skipped. */
-    private fun updateSilenceGate(silentBuffer: Boolean, bufferSecs: Double): Boolean {
-        silenceGateSecs = if (silentBuffer) silenceGateSecs + bufferSecs else 0.0
-        return silenceGateSecs >= 20.0
-    }
     private var suspendOnIdle = false
 
     // Exclude restricted apps flag
@@ -107,8 +100,27 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
     private var allowlistMode = false
 
     // Termination flags
-    private var isProcessorDisposing = false
-    private var isServiceDisposing = false
+    @Volatile private var isProcessorDisposing = false
+    @Volatile private var isServiceDisposing = false
+    @Volatile private var activeRecorder: AudioRecord? = null
+    @Volatile private var activeTrack: AudioTrack? = null
+    @Volatile private var lastProgressMs = 0L
+    private val engineClosed = AtomicBoolean(false)
+    private fun closeEngineOnce() {
+        if (engineClosed.compareAndSet(false, true)) engine.close()
+    }
+    private val recoveryHandler = Handler(Looper.getMainLooper())
+    private val watchdog = object : Runnable {
+        override fun run() {
+            if (isServiceDisposing || isProcessorDisposing || recorderThread == null) return
+            if (SystemClock.elapsedRealtime() - lastProgressMs > 5000L) {
+                Timber.e("AUDIO_RECOVERY stalled audio I/O; stopping service and releasing mute effects")
+                stopSelf()
+                return
+            }
+            recoveryHandler.postDelayed(this, 1000L)
+        }
+    }
 
     // Shared preferences
     private val preferences: Preferences.App by inject()
@@ -228,11 +240,15 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
             stopSelf()
         }
 
-        return START_REDELIVER_INTENT
+        return START_NOT_STICKY
     }
 
     override fun onDestroy() {
         isServiceDisposing = true
+
+        recoveryHandler.removeCallbacks(watchdog)
+        // Prevent callbacks from re-enabling mute while restoring ordinary audio.
+        sessionManager.sessionDatabase.destroy()
 
         // Release the projection FIRST. If anything below fails, the capture
         // must still be handed back or every app on the device stays silent
@@ -247,7 +263,7 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
         // Stop recording and release engine
         try { stopRecording() }
         catch (ex: Exception) { Timber.e(ex, "Failed to stop recording") }
-        try { engine.close() }
+        try { if (recorderThread?.isAlive != true) closeEngineOnce() }
         catch (ex: Throwable) { Timber.e(ex, "Failed to close engine") }
 
         // Stop foreground service
@@ -285,11 +301,6 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
         override fun onStop() {
             if(isServiceDisposing) {
                 // Planned shutdown
-                return
-            }
-
-            if(preferencesVar.get<Boolean>(R.string.key_is_activity_active)) {
-                // Activity in foreground, toast too disruptive
                 return
             }
 
@@ -457,7 +468,8 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
         val encoding = AudioEncoding.fromInt(
             preferences.get<String>(R.string.key_audioformat_encoding).toIntOrNull() ?: 1
         )
-        val bufferSize = preferences.get<Float>(R.string.key_audioformat_buffersize).toInt()
+        val requestedSamples = preferences.get<Float>(R.string.key_audioformat_buffersize).toInt()
+        val bufferSize = requestedSamples.coerceAtLeast(2).let { it + it % 2 }
         val bufferSizeBytes = when (encoding) {
             AudioEncoding.PcmFloat -> bufferSize * Float.SIZE_BYTES
             else -> bufferSize * Short.SIZE_BYTES
@@ -473,155 +485,139 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
                 "HAL buffer size (bytes): ${determineBufferSize()}")
 
         // Create recorder and track
-        var recorder: AudioRecord
-        val track: AudioTrack
+        var recorder: AudioRecord? = null
+        var track: AudioTrack? = null
         try {
             recorder = buildAudioRecord(encodingFormat, sampleRate, bufferSizeBytes)
             track = buildAudioTrack(encodingFormat, sampleRate, bufferSizeBytes)
+            check(recorder.state == AudioRecord.STATE_INITIALIZED) { "AudioRecord uninitialized" }
+            check(track.state == AudioTrack.STATE_INITIALIZED) { "AudioTrack uninitialized" }
         }
         catch(ex: Exception) {
+            recorder?.release()
+            track?.release()
             Timber.e("Failed to create initial audio record/track")
             Timber.e(ex)
             stopSelf()
             return
         }
 
+        var currentRecorder = checkNotNull(recorder)
+        val currentTrack = checkNotNull(track)
+        activeRecorder = currentRecorder
+        activeTrack = currentTrack
+
         if(engine.sampleRate.toInt() != sampleRate) {
             Timber.d("Sampling rate changed to ${sampleRate}Hz")
             engine.sampleRate = sampleRate.toFloat()
         }
 
-        // TODO Move all audio-related code to C++
+        lastProgressMs = SystemClock.elapsedRealtime()
         recorderThread = Thread {
+            var meaningfulOutputMissingSecs = 0.0
+            var captureSilenceSecs = 0.0
+            var nextLogMs = 0L
             try {
-                // Rebuilding the processing pipeline must not overwrite the current
-                // session-aware notification with a false "idle" state.
-                ServiceNotificationHelper.pushServiceNotification(
-                    applicationContext,
-                    notificationSessions,
-                )
-
                 val floatBuffer = FloatArray(bufferSize)
                 val floatOutBuffer = FloatArray(bufferSize)
                 val shortBuffer = ShortArray(bufferSize)
                 val shortOutBuffer = ShortArray(bufferSize)
-                // Silence gate: session-based idle never fires while an app
-                // sits paused holding its audio session, so the pipeline used
-                // to process pure silence indefinitely. After 20s of silent
-                // input (longer than the longest reverb tail) the DSP chain
-                // and output track are skipped; capture keeps running so the
-                // first non-silent buffer resumes instantly and loses nothing.
-                var bufferGated = false
-                val bufferSecs = (bufferSize / 2.0) / sampleRate.toDouble()
                 while (!isProcessorDisposing) {
-                    if(recreateRecorderRequested) {
+                    lastProgressMs = SystemClock.elapsedRealtime()
+                    if (recreateRecorderRequested) {
                         recreateRecorderRequested = false
-                        Timber.d("Recreating recorder without stopping thread...")
-
-                        // Suspend track, release recorder
-                        recorder.stop()
-                        track.stop()
-                        recorder.release()
-
-
-                        if (mediaProjection == null) {
-                            Timber.e("Media projection handle is null, stopping service")
-                            stopSelf()
-                            return@Thread
-                        }
-
-                        // Recreate recorder with new AudioPlaybackRecordingConfiguration
-                        recorder = buildAudioRecord(encodingFormat, sampleRate, bufferSizeBytes)
-                        Timber.d("Recorder recreated")
+                        currentRecorder.stop()
+                        currentTrack.pause()
+                        currentTrack.flush()
+                        currentRecorder.release()
+                        check(mediaProjection != null) { "Projection lost during recorder recreation" }
+                        currentRecorder = buildAudioRecord(encodingFormat, sampleRate, bufferSizeBytes)
+                        activeRecorder = currentRecorder
+                        check(currentRecorder.state == AudioRecord.STATE_INITIALIZED)
                     }
-
-                    // Suspend core while idle
-                    if(isProcessorIdle && suspendOnIdle)
-                    {
-                        if(recorder.state == AudioRecord.STATE_INITIALIZED &&
-                            recorder.recordingState == AudioRecord.RECORDSTATE_RECORDING)
-                            recorder.stop()
-                        if(track.state == AudioTrack.STATE_INITIALIZED &&
-                            track.playState != AudioTrack.PLAYSTATE_STOPPED)
-                            track.stop()
-
-                        try {
-                            Thread.sleep(50)
-                        }
-                        catch(e: InterruptedException) {
-                            break
-                        }
+                    if (isProcessorIdle && suspendOnIdle) {
+                        if (currentRecorder.recordingState == AudioRecord.RECORDSTATE_RECORDING) currentRecorder.stop()
+                        if (currentTrack.playState == AudioTrack.PLAYSTATE_PLAYING) currentTrack.pause()
+                        Thread.sleep(50)
                         continue
                     }
-
-                    // Resume recorder if suspended
-                    if(recorder.recordingState == AudioRecord.RECORDSTATE_STOPPED) {
-                        recorder.startRecording()
+                    if (currentRecorder.recordingState != AudioRecord.RECORDSTATE_RECORDING) currentRecorder.startRecording()
+                    check(currentRecorder.recordingState == AudioRecord.RECORDSTATE_RECORDING)
+                    if (currentTrack.playState != AudioTrack.PLAYSTATE_PLAYING) currentTrack.play()
+                    check(currentTrack.playState == AudioTrack.PLAYSTATE_PLAYING)
+                    val count = if (encoding == AudioEncoding.PcmShort)
+                        currentRecorder.read(shortBuffer, 0, bufferSize, AudioRecord.READ_BLOCKING)
+                    else currentRecorder.read(floatBuffer, 0, bufferSize, AudioRecord.READ_BLOCKING)
+                    if (isProcessorDisposing) break
+                    AudioIoGuard.validateRead(count, bufferSize)
+                    if (count == 0) { Thread.sleep(5); continue }
+                    val input = if (encoding == AudioEncoding.PcmShort) AudioIoGuard.measure(shortBuffer, count)
+                        else AudioIoGuard.measure(floatBuffer, count)
+                    val output = if (encoding == AudioEncoding.PcmShort) {
+                        engine.processInt16(shortBuffer, shortOutBuffer, 0, count)
+                        AudioIoGuard.measure(shortOutBuffer, count)
+                    } else {
+                        engine.processFloat(floatBuffer, floatOutBuffer, 0, count)
+                        AudioIoGuard.measure(floatOutBuffer, count)
                     }
-                    // Resume track if suspended
-                    if(track.playState != AudioTrack.PLAYSTATE_PLAYING) {
-                        track.play()
+                    val seconds = count / (2.0 * sampleRate)
+                    meaningfulOutputMissingSecs = if (input.peak > 0.0001 && output.peak < 0.0000001)
+                        meaningfulOutputMissingSecs + seconds else 0.0
+                    captureSilenceSecs = if (notificationSessions.isNotEmpty() && input.peak < 0.0000001)
+                        captureSilenceSecs + seconds else 0.0
+                    check(meaningfulOutputMissingSecs < 3.0) { "DSP output silent with meaningful input" }
+                    // Conservative recovery: silence with muted sessions cannot prove source playback
+                    // is active, but must never leave the user's ordinary audio muted indefinitely.
+                    check(captureSilenceSecs < 8.0) { "Capture silent while source sessions are muted; compatibility unconfirmed" }
+                    AudioIoGuard.writeFully(count, { isProcessorDisposing }) { offset, remaining ->
+                        if (encoding == AudioEncoding.PcmShort)
+                            currentTrack.write(shortOutBuffer, offset, remaining, AudioTrack.WRITE_NON_BLOCKING)
+                        else currentTrack.write(floatOutBuffer, offset, remaining, AudioTrack.WRITE_NON_BLOCKING)
                     }
-
-                    // Choose encoding and process data
-                    if(encoding == AudioEncoding.PcmShort) {
-                        recorder.read(shortBuffer, 0, shortBuffer.size, AudioRecord.READ_BLOCKING)
-                        var silent = suspendOnIdle
-                        if (silent) {
-                            for (v in shortBuffer) if (v.toInt() != 0) { silent = false; break }
-                        }
-                        if (updateSilenceGate(silent, bufferSecs)) {
-                            if (!bufferGated) { bufferGated = true; track.stop() }
-                        } else {
-                            if (bufferGated) { bufferGated = false; track.play() }
-                            engine.processInt16(shortBuffer, shortOutBuffer)
-                            track.write(shortOutBuffer, 0, shortOutBuffer.size, AudioTrack.WRITE_BLOCKING)
-                        }
-                    }
-                    else {
-                        recorder.read(floatBuffer, 0, floatBuffer.size, AudioRecord.READ_BLOCKING)
-                        var silent = suspendOnIdle
-                        if (silent) {
-                            for (v in floatBuffer) if (v > 1e-7f || v < -1e-7f) { silent = false; break }
-                        }
-                        if (updateSilenceGate(silent, bufferSecs)) {
-                            if (!bufferGated) { bufferGated = true; track.stop() }
-                        } else {
-                            if (bufferGated) { bufferGated = false; track.play() }
-                            engine.processFloat(floatBuffer, floatOutBuffer)
-                            track.write(floatOutBuffer, 0, floatOutBuffer.size, AudioTrack.WRITE_BLOCKING)
-                        }
+                    val now = SystemClock.elapsedRealtime()
+                    lastProgressMs = now
+                    if (now >= nextLogMs) {
+                        Timber.i("AUDIO_RECOVERY read=%d inputRms=%f inputPeak=%f outputRms=%f outputPeak=%f frames=%d underruns=%d route=%s rate=%d encoding=%s",
+                            count, input.rms, input.peak, output.rms, output.peak,
+                            currentTrack.playbackHeadPosition, currentTrack.underrunCount,
+                            currentTrack.routedDevice?.type, sampleRate, encoding.name)
+                        nextLogMs = now + 1000L
                     }
                 }
-            } catch (e: IOException) {
-                Timber.w(e)
-                // ignore
-            } catch (e: Exception) {
-                Timber.e("Exception in recorderThread raised")
-                Timber.e(e)
-                stopSelf()
+            } catch (e: InterruptedException) {
+                if (!isProcessorDisposing) Timber.e(e, "AUDIO_RECOVERY unexpected interruption")
+            } catch (e: Throwable) {
+                Timber.e(e, "AUDIO_RECOVERY pipeline failure; restoring ordinary audio")
             } finally {
-                // Clean up recorder and track
-                if(recorder.state != AudioRecord.STATE_UNINITIALIZED) {
-                    recorder.stop()
-                }
-                if(track.state != AudioTrack.STATE_UNINITIALIZED) {
-                    track.stop()
-                }
-
-                recorder.release()
-                track.release()
+                runCatching { currentRecorder.stop() }
+                runCatching { currentTrack.stop() }
+                runCatching { currentRecorder.release() }
+                runCatching { currentTrack.release() }
+                activeRecorder = null
+                activeTrack = null
+                if (isServiceDisposing) closeEngineOnce()
+                else if (!isProcessorDisposing) recoveryHandler.post { stopSelf() }
             }
         }
         recorderThread!!.start()
+        recoveryHandler.removeCallbacks(watchdog)
+        recoveryHandler.postDelayed(watchdog, 1000L)
     }
 
     // Terminate recording thread
     fun stopRecording() {
         if (recorderThread != null) {
             isProcessorDisposing = true
+            recoveryHandler.removeCallbacks(watchdog)
+            runCatching { activeRecorder?.stop() }
+            runCatching { activeTrack?.pause() }
             recorderThread!!.interrupt()
             recorderThread!!.join(500)
+            if (recorderThread!!.isAlive) {
+                Timber.e("AUDIO_RECOVERY worker did not terminate; refusing restart")
+                stopSelf()
+                return
+            }
             recorderThread = null
         }
     }
@@ -634,6 +630,7 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
         }
 
         stopRecording()
+        if (recorderThread?.isAlive == true) return
         isProcessorDisposing = false
         recreateRecorderRequested = false
         startRecording()
@@ -641,8 +638,8 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
 
     private fun buildAudioTrack(encoding: Int, sampleRate: Int, bufferSizeBytes: Int): AudioTrack {
         val attributesBuilder = AudioAttributes.Builder()
-            .setUsage(AudioAttributes.USAGE_UNKNOWN)
-            .setContentType(AudioAttributes.CONTENT_TYPE_UNKNOWN)
+            .setUsage(AudioAttributes.USAGE_MEDIA)
+            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
             .setFlags(0)
 
         sdkAbove(Build.VERSION_CODES.Q) {
@@ -661,11 +658,9 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
             2 /* channels */ * 4 /* bytes */
         }
 
-        val bufferSize = if (((bufferSizeBytes % frameSizeInBytes) != 0 || bufferSizeBytes < 1)) {
-            Timber.e("Invalid audio buffer size $bufferSizeBytes")
-            128 * (bufferSizeBytes / 128)
-        }
-        else bufferSizeBytes
+        val minBytes = AudioTrack.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_OUT_STEREO, encoding)
+        check(minBytes > 0) { "Unsupported output format: $minBytes" }
+        val bufferSize = AudioIoGuard.alignBytes(maxOf(bufferSizeBytes, minBytes), frameSizeInBytes)
 
         Timber.d("Using buffer size $bufferSize")
 
@@ -740,7 +735,10 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
 
         return AudioRecord.Builder()
             .setAudioFormat(format)
-            .setBufferSizeInBytes(bufferSizeBytes)
+            .setBufferSizeInBytes(AudioIoGuard.alignBytes(maxOf(bufferSizeBytes,
+                AudioRecord.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_IN_STEREO, encoding).also {
+                    check(it > 0) { "Unsupported capture format: $it" }
+                }), if (encoding == AudioFormat.ENCODING_PCM_16BIT) 4 else 8))
             .setAudioPlaybackCaptureConfig(configBuilder.build())
             .build()
     }
