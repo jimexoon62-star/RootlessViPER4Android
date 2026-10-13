@@ -14,7 +14,6 @@ jobs:
         with:
           java-version: '17'
           distribution: temurin
-      - uses: android-actions/setup-android@v3
       - name: Build and test
         run: ./gradlew testRootlessFdroidReleaseUnitTest assembleRootlessFdroidRelease --no-daemon
       - name: Inspect delivered ARM64 APK
