@@ -20,6 +20,8 @@ class NativeAudioRecoveryTest {
     private fun withEngine(test: (Long) -> Unit) {
         val handle = JamesDspWrapper.alloc(callbacks)
         assertTrue("JNI allocation", handle != 0L)
+        JamesDspWrapper.setLimiterMode(handle, 2)
+        JamesDspWrapper.setPostGain(handle, 0f)
         try { test(handle) } finally { JamesDspWrapper.free(handle) }
     }
     @Test fun repeatedJniStartupAndPassthrough() {
@@ -33,7 +35,7 @@ class NativeAudioRecoveryTest {
                 repeat(20) { JamesDspWrapper.processFloat(handle, input, output, 0, input.size) }
                 assertTrue(output.all { it.isFinite() })
                 assertTrue("Non-silent reference must remain non-silent", output.any { kotlin.math.abs(it) > .001f })
-                // Fresh DSP has all optional effects disabled; default limiter is below threshold.
+                // Fresh DSP has optional effects disabled; limiter is explicitly bypassed.
                 assertArrayEquals(input, output, .0001f)
             }
         }

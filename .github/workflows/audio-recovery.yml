@@ -14,6 +14,7 @@ jobs:
         with:
           java-version: '17'
           distribution: temurin
+          cache: gradle
       - name: Build and test
         run: ./gradlew testRootlessFdroidReleaseUnitTest assembleRootlessFdroidRelease --no-daemon
       - name: Inspect delivered ARM64 APK
@@ -42,3 +43,30 @@ jobs:
           path: |
             evidence/
             app/build/test-results/testRootlessFdroidReleaseUnitTest/
+  native-android-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: temurin
+          cache: gradle
+      - name: Enable KVM for emulator
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          script: ./gradlew connectedRootlessFdroidDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=me.timschneeberger.rootlessjamesdsp.interop.NativeAudioRecoveryTest --no-daemon
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-android-test-results
+          path: app/build/outputs/androidTest-results/

@@ -140,6 +140,9 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
     override fun onCreate() {
         super.onCreate()
 
+        Timber.i("AUDIO_RECOVERY device=%s model=%s sdk=%d build=%s fingerprint=%s",
+            Build.MANUFACTURER, Build.MODEL, Build.VERSION.SDK_INT, Build.DISPLAY, Build.FINGERPRINT)
+
         // Get reference to system services
         audioManager = getSystemService<AudioManager>()!!
         mediaProjectionManager = getSystemService<MediaProjectionManager>()!!

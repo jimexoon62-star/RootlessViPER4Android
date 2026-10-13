@@ -50,16 +50,13 @@ class RootlessSessionDatabase(context: Context) : BaseSessionDatabase(context) {
 
     override fun onSessionRemoved(item: IEffectSession) {
         (item as MutedEffectSession).run {
-            try {
-                audioMuteEffect?.setEnableStatusListener(null)
-                audioMuteEffect?.setControlStatusListener(null)
-                audioMuteEffect?.enabled = false
-                audioMuteEffect?.release()
-            }
-            catch (ex: Exception) {
-                Timber.e("onSessionRemoved: effect already destroyed")
-                Timber.d(ex)
-            }
+            val effect = audioMuteEffect
+            audioMuteEffect = null
+            // Each cleanup step must run even if the preceding operation fails.
+            runCatching { effect?.setEnableStatusListener(null) }.onFailure { Timber.w(it) }
+            runCatching { effect?.setControlStatusListener(null) }.onFailure { Timber.w(it) }
+            runCatching { effect?.enabled = false }.onFailure { Timber.w(it) }
+            runCatching { effect?.release() }.onFailure { Timber.w(it) }
         }
     }
 
