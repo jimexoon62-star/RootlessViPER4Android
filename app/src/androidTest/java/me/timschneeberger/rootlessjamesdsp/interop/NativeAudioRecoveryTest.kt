@@ -52,6 +52,18 @@ class NativeAudioRecoveryTest {
         repeat(20) { JamesDspWrapper.processFloat(handle, silence, result, 0, silence.size) }
         assertArrayEquals(silence, result, .000001f)
     }
+    @Test fun impulseAndGainChangeAreMeasurable() = withEngine { handle ->
+        val input = FloatArray(256)
+        input[0] = .1f
+        input[1] = -.05f
+        val output = FloatArray(256)
+        JamesDspWrapper.processFloat(handle, input, output, 0, input.size)
+        assertArrayEquals(input, output, .000001f)
+        JamesDspWrapper.setPostGain(handle, 6f)
+        JamesDspWrapper.processFloat(handle, input, output, 0, input.size)
+        assertEquals(.199526f, output[0], .00001f)
+        assertEquals(-.099763f, output[1], .00001f)
+    }
     @Test fun invalidNativeBoundsThrowWithoutCrash() = withEngine { handle ->
         try {
             JamesDspWrapper.processFloat(handle, FloatArray(4), FloatArray(2), 0, 4)

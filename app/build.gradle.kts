@@ -1,4 +1,4 @@
-﻿import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsExtension
+import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsExtension
 import java.util.Base64
 
 plugins {
@@ -107,6 +107,14 @@ android {
 
             manifestPlaceholders["label"] = "RootlessViPER4Android"
             applicationId = "com.alienware377.viper4android.rootless"
+            // AGP otherwise builds/packages all CMake shared targets, including
+            // the EXCLUDE_FROM_ALL HAL target which has the same output name.
+            // The HAL exports AELI rather than the DSP API and cannot be in an APK.
+            externalNativeBuild {
+                cmake {
+                    targets += listOf("jamesdsp", "jamesdsp-wrapper", "jdspimprestoolbox", "crashlytics-connector")
+                }
+            }
             AndroidConfig.minSdk = 29
             minSdk = AndroidConfig.minSdk
             buildConfigField("boolean", "ROOTLESS", "true")
