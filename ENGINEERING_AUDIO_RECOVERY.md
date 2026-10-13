@@ -1,3 +1,29 @@
+# Current update — 4.0.2-diagnostic (129)
+
+The owner installed 4.0.1 and reported silence on the HONOR X9c / BRP-NX1 running Android 16, MagicOS 10.0, firmware 10.0.0.168(C185E6R6P1). The diagnostic dump identified the installed commit correctly but ended with "NOTE: Log file does not exist". The precise reason the old cache-based logger failed is not established. No cause is attributed to the other screen-sharing package present in the framework dump.
+
+This build repairs diagnostic persistence, not a demonstrated target-device audio fault. It replaces the cache logger with a synchronized private-files store and uses the same store for diagnostic export. Entries are closed after each write, survive application reopening, and rotate with a bounded size. Storage errors become explicit diagnostic text. Audio pipeline changes from 4.0.1 are retained.
+
+- APK: RootlessViPER4Android-4.0.2-diagnostic-arm64.apk
+- Package: com.alienware377.viper4android.rootless
+- Version code: 129; ARM64 rootless FOSS release.
+- Commit: 17f70e5863c66ad0e886c613e3e19d7996761bd1
+- Embedded build time: 2026-10-13T18:11Z
+- Size: 33,602,986 bytes
+- SHA-256: 87babe9b0db6c5bc127ff85332898e58697ec6a2b568d4cae5396743b13a750c
+- apksigner verify: PASS, v2 signature, same certificate as 4.0.1.
+- Certificate SHA-256: dfc8c77e9f4ec2b8ff5d133320df6f51eb2440fa32cb07f5d1a910199e3f9675
+- Actual APK ARM64 native dependency/export inspection: PASS.
+- Unit tests: 25 passed, including 4 diagnostic persistence/concurrency/reopening/rotation tests and 11 I/O guards.
+- Android 16 x86_64 emulator instrumentation: 5 passed, zero failures/errors. This includes applicationDiagnosticsArePersistedAndExportable, which writes through the actual application Timber tree, reads through the same snapshot method used by the exporter, and verifies the private file exists.
+- Build/test run: https://github.com/jimexoon62-star/RootlessViPER4Android/actions/runs/38444623001
+
+The successful Android log test is an emulator result. Actual HONOR playback and stage measurements are still outstanding. The next owner action is one controlled activation followed by Settings → Troubleshooting → Export audio session dump. The new trace must contain DIAGNOSTIC_START/DIAGNOSTIC_READY and AUDIO_RECOVERY stage records (or an explicit failure) before a target-device root cause is claimed.
+
+The earlier report below is historical evidence for 4.0.1, not acceptance evidence for 4.0.2 or for audible playback.
+
+---
+
 # RootlessViPER4Android audio recovery — engineering evidence
 
 Status: diagnostic repair candidate. Target-device installation and audible playback have not been demonstrated. Do not describe this APK as operationally verified.
