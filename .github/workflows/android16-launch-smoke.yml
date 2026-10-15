@@ -55,7 +55,7 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
           disable-animations: true
           script: |
-            set -euo pipefail
+            set -eu
             PKG=com.alienware377.viper4android.rootless.debug
             APK=ci-apks/ViPER4Android-v4.0.0-rootless-fdroid-x86_64-debug.apk
             adb logcat -c
