@@ -46,11 +46,26 @@ jobs:
           "$APKSIGNER" verify --print-certs fork-apks/ViPER4Android-v4.0.0-rootless-fdroid-arm64-v8a-debug.apk > fork-signature.txt
           "$AAPT" dump badging official.apk | grep -m1 '^package:'
           "$AAPT" dump badging fork-apks/ViPER4Android-v4.0.0-rootless-fdroid-arm64-v8a-debug.apk | grep -m1 '^package:'
-          official=$(grep -m1 '^Signer #1 certificate SHA-256 digest:' official-signature.txt | awk '{print $NF}')
-          fork=$(grep -m1 '^Signer #1 certificate SHA-256 digest:' fork-signature.txt | awk '{print $NF}')
-          test -n "$official" && test -n "$fork"
-          echo "Official cert: $official"
-          echo "Fork cert: $fork"
+          echo 'OFFICIAL signing info:'
+          cat official-signature.txt
+          echo 'FORK signing info:'
+          cat fork-signature.txt
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          a, b = [Path(x).read_text() for x in ('official-signature.txt', 'fork-signature.txt')]
+          def digest(txt):
+              result = re.search(r'(?im)Signer\\s*#?1\\s+certificate\\s+SHA-256\\s+digest\\s*:\\s*([0-9a-f]{64})',txt)
+              if not result:
+                  raise RuntimeError('Cannot parse signer certificate SHA-256 digest')
+              return result.group(1).lower()
+          one,two = digest(a),digest(b)
+          print('Official certificate:',one)
+          print('Fork certificate:',two)
+          if one!=two:
+              raise SystemExit('RESULT: DIFFERENT signing certificates. Cannot use as in-place update.')
+          print('RESULT: MATCHING signing certificates; same-package update possible.')
+          PY
           if test "$official" = "$fork"; then
             echo 'RESULT: SIGNING CERTIFICATES MATCH. Same-package update should be signature-compatible for this official v4.0.0 install.'
           else
