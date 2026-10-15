@@ -1,0 +1,41 @@
+name: Deliver single verified ARM64 audiofix APK
+
+on:
+  push:
+    branches:
+      - fix/audio-failopen-debug-20261012
+    paths:
+      - '.github/workflows/deliver-single-arm64-apk.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  delivery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Download the previously signed and verified rootless build
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          mkdir -p existing
+          gh run download 38824871472 \
+            --name RV4A-v4.0.0-audiofix.1-rootless-signed-update \
+            --dir existing
+          src=$(find existing -type f -name '*rootless-fdroid-arm64-v8a-release.apk' | head -n1)
+          test -n "$src" && test -s "$src"
+          cp "$src" RootlessViPER4Android-v4.0.0-audiofix.1-arm64-INPLACE-UPDATE.apk
+          echo 'dd424167f138d991aff52bd7634b9d2a6480ab25a84b8eb4c09617a3d1b3c116  RootlessViPER4Android-v4.0.0-audiofix.1-arm64-INPLACE-UPDATE.apk' | sha256sum --check
+
+      - name: Publish single-APK Actions artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: RootlessViPER4Android-v4.0.0-audiofix.1-ARM64-APK
+          path: RootlessViPER4Android-v4.0.0-audiofix.1-arm64-INPLACE-UPDATE.apk
+          if-no-files-found: error
+          retention-days: 30
