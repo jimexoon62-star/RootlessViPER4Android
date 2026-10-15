@@ -1,0 +1,72 @@
+name: Build patched RootlessViPER4Android Debug APK
+
+on:
+  push:
+    branches:
+      - fix/audio-failopen-debug-20261012
+      - viper-extras
+  pull_request:
+    branches:
+      - viper-extras
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  android-rootless-debug:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - name: Checkout patched fork
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Confirm patched source is present
+        shell: bash
+        run: |
+          set -euo pipefail
+          file=app/src/main/java/me/timschneeberger/rootlessjamesdsp/service/RootlessAudioProcessorService.kt
+          grep -Fq 'private fun failOpen(reason: String)' "$file"
+          grep -Fq 'if (readSize <= 0)' "$file"
+          grep -Fq 'if (wrote !=' "$file"
+          echo "Patched rootless audio processor confirmed."
+
+      - name: Build installable rootless FOSS debug APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x ./gradlew
+          ./gradlew :app:assembleRootlessFdroidDebug --no-daemon --stacktrace
+
+      - name: Verify APK package and signing
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          files=(app/build/outputs/apk/rootlessFdroid/debug/*.apk)
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "ERROR: No APK built" >&2
+            exit 1
+          fi
+          APKSIGNER=$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)
+          AAPT=$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -n 1)
+          test -n "$APKSIGNER" && test -n "$AAPT"
+          for apk in "${files[@]}"; do
+            "$APKSIGNER" verify --verbose "$apk"
+            "$AAPT" dump badging "$apk" | grep -m1 '^package:'
+            sha256sum "$apk"
+          done
+
+      - name: Upload signed debug APK artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: RootlessViPER4Android-patched-DEBUG-APKs
+          path: app/build/outputs/apk/rootlessFdroid/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14

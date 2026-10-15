@@ -1,0 +1,63 @@
+name: Compare official and fork APK signing certificates
+
+on:
+  push:
+    branches:
+      - fix/audio-failopen-debug-20261012
+    paths:
+      - '.github/workflows/compare-official-signing.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  check-signing:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Download official v4.0.0 rootless ARM64 release
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fLSs --retry 3 -o official.apk "https://github.com/alienware377/RootlessViPER4Android/releases/download/v4.0.0/ViPER4Android-v4.0.0-rootless-fdroid-arm64-v8a-release.apk"
+          test -s official.apk
+
+      - name: Download fork's compiled rootless debug APK
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          mkdir -p fork-apks
+          gh run download 38220472293 --name RootlessViPER4Android-patched-DEBUG-APKs --dir fork-apks
+          test -s fork-apks/ViPER4Android-v4.0.0-rootless-fdroid-arm64-v8a-debug.apk
+
+      - name: Compare signing certificates and package identities
+        shell: bash
+        run: |
+          set -euo pipefail
+          APKSIGNER=$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)
+          AAPT=$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -n 1)
+          test -n "$APKSIGNER" && test -n "$AAPT"
+          "$APKSIGNER" verify --print-certs official.apk > official-signature.txt
+          "$APKSIGNER" verify --print-certs fork-apks/ViPER4Android-v4.0.0-rootless-fdroid-arm64-v8a-debug.apk > fork-signature.txt
+          "$AAPT" dump badging official.apk | grep -m1 '^package:'
+          "$AAPT" dump badging fork-apks/ViPER4Android-v4.0.0-rootless-fdroid-arm64-v8a-debug.apk | grep -m1 '^package:'
+          echo 'OFFICIAL signing info:'
+          cat official-signature.txt
+          echo 'FORK signing info:'
+          cat fork-signature.txt
+          official=$(grep -m1 'V2 Signer: certificate SHA-256 digest:' official-signature.txt | awk '{print $NF}')
+          fork=$(grep -m1 'V2 Signer: certificate SHA-256 digest:' fork-signature.txt | awk '{print $NF}')
+          test -n "$official" && test -n "$fork"
+          echo "Official cert: $official"
+          echo "Fork cert: $fork"
+          if test "$official" = "$fork"; then
+            echo 'RESULT: SIGNING CERTIFICATES MATCH. Same-package update compatible with the official signing identity.'
+          else
+            echo 'RESULT: SIGNATURE MISMATCH. DO NOT INSTALL AS UPDATE.' >&2
+            exit 1
+          fi

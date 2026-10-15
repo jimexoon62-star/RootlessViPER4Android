@@ -1,0 +1,70 @@
+name: RootlessViPER4Android Android 16 launch smoke test
+
+on:
+  push:
+    branches:
+      - fix/audio-failopen-debug-20261012
+    paths:
+      - '.github/workflows/android16-launch-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  emulator-android16:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Download previously compiled and signed x86_64 test APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ci-apks
+          gh run download 38220472293 --name RootlessViPER4Android-patched-DEBUG-APKs --dir ci-apks
+          test -s ci-apks/ViPER4Android-v4.0.0-rootless-fdroid-x86_64-debug.apk
+
+      - name: Enable hardware acceleration
+        run: |
+          if test -e /dev/kvm; then sudo chmod 666 /dev/kvm; fi
+
+      - name: Boot Android 16 and test launch
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          target: default
+          arch: x86_64
+          profile: pixel_6
+          cores: 2
+          ram-size: 3072M
+          heap-size: 512M
+          disk-size: 6G
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          disable-animations: true
+          script: bash ci/android16-smoke.sh
+      - name: Upload emulator screenshots and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rv4a-android16-launch-report
+          path: |
+            launch-result.txt
+            launch-logcat.txt
+            activity-dump.txt
+            launch-screen.png
+            window.xml
+          if-no-files-found: warn
+          retention-days: 7

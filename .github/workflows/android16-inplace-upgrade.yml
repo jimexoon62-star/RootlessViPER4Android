@@ -1,0 +1,73 @@
+name: Android 16 test original-to-audiofix in-place update
+
+on:
+  push:
+    branches:
+      - fix/audio-failopen-debug-20261012
+    paths:
+      - '.github/workflows/android16-inplace-upgrade.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  inplace-upgrade-android16:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Download official vendor v4.0.0 app and our patched release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          curl -fLSs --retry 3 -o official.apk \
+            "https://github.com/alienware377/RootlessViPER4Android/releases/download/v4.0.0/ViPER4Android-v4.0.0-rootless-fdroid-x86_64-release.apk"
+          mkdir -p update-apks
+          gh run download 38824871472 \
+            --name RV4A-v4.0.0-audiofix.1-rootless-signed-update \
+            --dir update-apks
+          test -s official.apk
+          find update-apks -type f -name '*rootless-fdroid-x86_64-release.apk' -size +10M | grep -q .
+
+      - name: Enable hardware acceleration
+        run: |
+          if test -e /dev/kvm; then sudo chmod 666 /dev/kvm; fi
+
+      - name: Android 16 install official, retain audio permission through update, launch
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          target: default
+          arch: x86_64
+          profile: pixel_6
+          cores: 2
+          ram-size: 3072M
+          disk-size: 6G
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          disable-animations: true
+          script: bash ci/android16-inplace-upgrade.sh
+
+      - name: Upload detailed Android 16 upgrade diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rv4a-android16-inplace-upgrade-evidence
+          path: |
+            before-package.txt
+            after-package.txt
+            update-launch-result.txt
+            update-launch-logcat.txt
+            update-activity-dump.txt
+            update-screen.png
+          if-no-files-found: warn
+          retention-days: 14

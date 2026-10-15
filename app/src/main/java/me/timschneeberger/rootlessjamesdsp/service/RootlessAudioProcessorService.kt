@@ -109,6 +109,7 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
     // Termination flags
     private var isProcessorDisposing = false
     private var isServiceDisposing = false
+    @Volatile private var failOpenRequested = false
 
     // Shared preferences
     private val preferences: Preferences.App by inject()
@@ -288,19 +289,14 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
                 return
             }
 
-            if(preferencesVar.get<Boolean>(R.string.key_is_activity_active)) {
-                // Activity in foreground, toast too disruptive
-                return
-            }
-
             Timber.w("Capture permission revoked. Stopping service.")
-
             sendLocalBroadcast(Intent(Constants.ACTION_DISCARD_AUTHORIZATION))
-
-            this@RootlessAudioProcessorService.toast(getString(R.string.capture_permission_revoked_toast))
-
+            // Do not skip shutdown just because the settings activity is open.
+            if (!preferencesVar.get<Boolean>(R.string.key_is_activity_active)) {
+                this@RootlessAudioProcessorService.toast(getString(R.string.capture_permission_revoked_toast))
+            }
             notificationManager.cancel(Notifications.ID_SERVICE_STATUS)
-            stopSelf()
+            failOpen("MediaProjection permission revoked")
         }
     }
 
@@ -443,6 +439,29 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
         recreateRecorderRequested = true
     }
 
+    /**
+     * Return original, unprocessed audio when capturing/playing the replacement stream fails.
+     * The session mute effects must be disabled before shutting down the service.
+     */
+    @Synchronized
+    private fun failOpen(reason: String) {
+        if (failOpenRequested || isServiceDisposing) return
+        failOpenRequested = true
+        isProcessorDisposing = true
+        Timber.e("Rootless audio pipeline failed: $reason; restoring original audio")
+        val releaseMutes = Runnable {
+            try {
+                sessionManager.sessionDatabase.clearSessions()
+            } catch (t: Throwable) {
+                Timber.e(t, "Failed to release original audio session mutes")
+            } finally {
+                stopSelf()
+            }
+        }
+        if (Looper.myLooper() == Looper.getMainLooper()) releaseMutes.run()
+        else Handler(Looper.getMainLooper()).post(releaseMutes)
+    }
+
     // Start recording thread
     @SuppressLint("BinaryOperationInTimber")
     private fun startRecording() {
@@ -525,8 +544,8 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
 
 
                         if (mediaProjection == null) {
-                            Timber.e("Media projection handle is null, stopping service")
-                            stopSelf()
+                            Timber.e("Media projection handle is null, failing open")
+                            failOpen("MediaProjection lost during recorder recreation")
                             return@Thread
                         }
 
@@ -565,7 +584,9 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
 
                     // Choose encoding and process data
                     if(encoding == AudioEncoding.PcmShort) {
-                        recorder.read(shortBuffer, 0, shortBuffer.size, AudioRecord.READ_BLOCKING)
+                        val readSize = recorder.read(shortBuffer, 0, shortBuffer.size, AudioRecord.READ_BLOCKING)
+                        if (readSize <= 0) throw IOException("AudioRecord short read: $readSize")
+                        if (readSize < shortBuffer.size) shortBuffer.fill(0, readSize)
                         var silent = suspendOnIdle
                         if (silent) {
                             for (v in shortBuffer) if (v.toInt() != 0) { silent = false; break }
@@ -575,11 +596,14 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
                         } else {
                             if (bufferGated) { bufferGated = false; track.play() }
                             engine.processInt16(shortBuffer, shortOutBuffer)
-                            track.write(shortOutBuffer, 0, shortOutBuffer.size, AudioTrack.WRITE_BLOCKING)
+                            val wrote = track.write(shortOutBuffer, 0, shortOutBuffer.size, AudioTrack.WRITE_BLOCKING)
+                            if (wrote != shortOutBuffer.size) throw IOException("AudioTrack short write: $wrote")
                         }
                     }
                     else {
-                        recorder.read(floatBuffer, 0, floatBuffer.size, AudioRecord.READ_BLOCKING)
+                        val readSize = recorder.read(floatBuffer, 0, floatBuffer.size, AudioRecord.READ_BLOCKING)
+                        if (readSize <= 0) throw IOException("AudioRecord float read: $readSize")
+                        if (readSize < floatBuffer.size) floatBuffer.fill(0f, readSize)
                         var silent = suspendOnIdle
                         if (silent) {
                             for (v in floatBuffer) if (v > 1e-7f || v < -1e-7f) { silent = false; break }
@@ -589,28 +613,25 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
                         } else {
                             if (bufferGated) { bufferGated = false; track.play() }
                             engine.processFloat(floatBuffer, floatOutBuffer)
-                            track.write(floatOutBuffer, 0, floatOutBuffer.size, AudioTrack.WRITE_BLOCKING)
+                            val wrote = track.write(floatOutBuffer, 0, floatOutBuffer.size, AudioTrack.WRITE_BLOCKING)
+                            if (wrote != floatOutBuffer.size) throw IOException("AudioTrack float write: $wrote")
                         }
                     }
                 }
             } catch (e: IOException) {
-                Timber.w(e)
-                // ignore
+                Timber.e(e, "Rootless audio I/O failed")
+                if (!isProcessorDisposing && !isServiceDisposing) failOpen("I/O failure")
             } catch (e: Exception) {
-                Timber.e("Exception in recorderThread raised")
-                Timber.e(e)
-                stopSelf()
+                Timber.e(e, "Rootless audio processing failed")
+                if (!isProcessorDisposing && !isServiceDisposing) failOpen("processor failure")
             } finally {
-                // Clean up recorder and track
-                if(recorder.state != AudioRecord.STATE_UNINITIALIZED) {
-                    recorder.stop()
-                }
-                if(track.state != AudioTrack.STATE_UNINITIALIZED) {
-                    track.stop()
-                }
-
-                recorder.release()
-                track.release()
+                // Each cleanup step must be independent to prevent leaking a mute session.
+                try { if (recorder.state == AudioRecord.STATE_INITIALIZED) recorder.stop() }
+                catch (e: Exception) { Timber.e(e, "Failed to stop audio capture") }
+                try { if (track.state == AudioTrack.STATE_INITIALIZED) track.stop() }
+                catch (e: Exception) { Timber.e(e, "Failed to stop processed playback") }
+                try { recorder.release() } catch (e: Exception) { Timber.e(e) }
+                try { track.release() } catch (e: Exception) { Timber.e(e) }
             }
         }
         recorderThread!!.start()
