@@ -1,3 +1,5 @@
+> SUPERSEDED: the APK below was rejected by the phone installer and has been withdrawn. Its testOnly=true flag was missed. See INSTALLATION-CORRECTION.md for the corrected artifact; prior signature/JVM checks were not installation evidence.
+
 # Delivery — 4.0.3-blackout-test (130)
 
 Status: signed ARM64 engineering candidate built and verified; HONOR/Spotify audible acceptance pending. The initiating cause of the supplied blackout remains unproven because the dump contains no application log.
