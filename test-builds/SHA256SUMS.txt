@@ -1,1 +1,1 @@
-77819a5db86c41b9fb62d1ea2550ac8167cd0b06d8952726496fd555eb67f2b2  RootlessViPER4Android-4.0.3-blackout-test-arm64.apk
+bc1798e8e11c299a70fc892422ad309cdb381853ab87f0db644a7b6c622098d6  RootlessViPER4Android-4.0.3-install-fix-arm64.apk
