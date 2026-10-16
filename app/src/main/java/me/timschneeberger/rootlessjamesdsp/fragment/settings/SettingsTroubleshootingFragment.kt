@@ -1,5 +1,7 @@
 package me.timschneeberger.rootlessjamesdsp.fragment.settings
 
+import me.timschneeberger.rootlessjamesdsp.utils.AudioDiagnosticLog
+
 import android.content.ComponentName
 import android.content.Intent
 import android.os.Build
@@ -62,32 +64,9 @@ class SettingsTroubleshootingFragment : SettingsBaseFragment() {
             val path = File(requireContext().filesDir, "dump.txt")
             val output = FileOutputStream(path)
             val writer = OutputStreamWriter(output)
-            val log = File(requireContext().cacheDir, "application.log")
-
             writer.write(debug)
             writer.write("==================> Application log\n")
-            writer.flush()
-
-            if (log.exists()) {
-                try {
-                    log.inputStream().use { input ->
-                        val buffer = ByteArray(8192)
-                        var read: Int
-                        while (input.read(buffer, 0, 8192)
-                                .also { read = it } >= 0
-                        ) {
-                            output.write(buffer, 0, read)
-                            output.flush()
-                        }
-                    }
-                }
-                catch (ex: Exception) {
-                    writer.write("NOTE: Failed to append log file.\n$ex\n")
-                }
-            }
-            else {
-                writer.write("NOTE: Log file does not exist\n")
-            }
+            writer.write(AudioDiagnosticLog.snapshot(requireContext()))
             writer.close()
             output.close()
 

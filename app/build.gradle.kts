@@ -107,6 +107,9 @@ android {
 
             manifestPlaceholders["label"] = "RootlessViPER4Android"
             applicationId = "com.alienware377.viper4android.rootless"
+            // Package APK DSP targets only; never the standalone HAL effect.
+            externalNativeBuild.cmake.targets += listOf(
+                "jamesdsp", "jamesdsp-wrapper", "jdspimprestoolbox", "crashlytics-connector")
             AndroidConfig.minSdk = 29
             minSdk = AndroidConfig.minSdk
             buildConfigField("boolean", "ROOTLESS", "true")
@@ -154,6 +157,9 @@ android {
             isUniversalApk = true
         }
     }
+
+    testBuildType = "release"
+    testOptions.unitTests.isReturnDefaultValues = true
 
     lint {
         abortOnError = false
@@ -282,6 +288,7 @@ dependencies {
 
     // Unit tests
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.mockito:mockito-core:5.15.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
 }

@@ -19,7 +19,7 @@ import com.pluto.plugins.network.PlutoNetworkPlugin
 import com.pluto.plugins.preferences.PlutoSharePreferencesPlugin
 import com.pluto.plugins.rooms.db.PlutoRoomsDBWatcher
 import com.pluto.plugins.rooms.db.PlutoRoomsDatabasePlugin
-import fr.bipi.tressence.file.FileLoggerTree
+import me.timschneeberger.rootlessjamesdsp.utils.AudioDiagnosticLog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import me.timschneeberger.rootlessjamesdsp.flavor.CrashlyticsImpl
@@ -114,22 +114,8 @@ open class MainApplication : Application(), SharedPreferences.OnSharedPreference
         // Clean up
         Cache.cleanup(this)
 
-        try {
-            Timber.plant(
-                FileLoggerTree.Builder()
-                    .withFileName("application.log")
-                    .withDirName(this.cacheDir.absolutePath)
-                    .withMinPriority(Log.VERBOSE)
-                    .withSizeLimit(2 * 1000000)
-                    .withFileLimit(1)
-                    .appendToFile(false)
-                    .build()
-            )
-        }
-        catch (ex: Exception) {
-            // Log file creation may fail
-            Timber.e(ex)
-        }
+        try { AudioDiagnosticLog.install(this) }
+        catch (ex: Exception) { Log.e("AudioDiagnosticLog", "Diagnostic initialization failed", ex) }
 
         run {
             val prev = Thread.getDefaultUncaughtExceptionHandler()

@@ -1,4 +1,4 @@
-﻿#include <android/log.h>
+#include <android/log.h>
 
 #define TAG "JamesDspWrapper_JNI"
 #include <Log.h>
@@ -116,15 +116,14 @@ Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_alloc(JNIEnv *e
 
 
     auto* _dsp = (JamesDSPLib*)malloc(sizeof(JamesDSPLib));
-    memset(_dsp, 0, sizeof(JamesDSPLib));
-
     if(!_dsp)
     {
         LOGE("JamesDspWrapper::ctor: Failed to allocate memory for libjamesdsp class object");
         delete self;
-        return 1;
+        return 0;
     }
 
+    memset(_dsp, 0, sizeof(JamesDSPLib));
     JamesDSPGlobalMemoryAllocation();
     JamesDSPInit(_dsp, 128, 48000);
 
@@ -133,9 +132,10 @@ Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_alloc(JNIEnv *e
         LOGE("JamesDspWrapper::ctor: JamesDSPGetMutexStatus returned false. "
                     "Cannot run safely in multi-threaded environment.");
         JamesDSPFree(_dsp);
+        free(_dsp);
         JamesDSPGlobalMemoryDeallocation();
         delete self;
-        return 2;
+        return 0;
     }
 
     self->dsp = _dsp;
@@ -225,16 +225,26 @@ Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_processInt16(JN
 {
     DECLARE_DSP_V
 
-    jsize inputLength;
-    if(size < 0)
-        inputLength = env->GetArrayLength(inputObj);
-    else
-        inputLength = size;
-    if(offset < 0)
-        offset = 0;
+    if (inputObj == nullptr || outputObj == nullptr) {
+        env->ThrowNew(env->FindClass("java/lang/IllegalArgumentException"), "Null PCM array");
+        return;
+    }
+    if (offset < 0) offset = 0;
+    const jsize capacity = env->GetArrayLength(inputObj);
+    const jsize inputLength = size < 0 ? capacity - offset : size;
+    if (offset > capacity || inputLength < 0 || inputLength > capacity - offset ||
+        inputLength > env->GetArrayLength(outputObj) || inputLength % 2 != 0) {
+        env->ThrowNew(env->FindClass("java/lang/IllegalArgumentException"), "Invalid stereo PCM bounds");
+        return;
+    }
 
     auto input = env->GetShortArrayElements(inputObj, nullptr);
     auto output = env->GetShortArrayElements(outputObj, nullptr);
+    if (input == nullptr || output == nullptr) {
+        if (input != nullptr) env->ReleaseShortArrayElements(inputObj, input, JNI_ABORT);
+        if (output != nullptr) env->ReleaseShortArrayElements(outputObj, output, JNI_ABORT);
+        return;
+    }
     dsp->processInt16Multiplexd(dsp, input + offset, output, inputLength / 2);
     env->ReleaseShortArrayElements(inputObj, input, JNI_ABORT);
     env->ReleaseShortArrayElements(outputObj, output, 0);
@@ -246,16 +256,26 @@ Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_processInt32(JN
 {
     DECLARE_DSP_V
 
-    jsize inputLength;
-    if(size < 0)
-        inputLength = env->GetArrayLength(inputObj);
-    else
-        inputLength = size;
-    if(offset < 0)
-        offset = 0;
+    if (inputObj == nullptr || outputObj == nullptr) {
+        env->ThrowNew(env->FindClass("java/lang/IllegalArgumentException"), "Null PCM array");
+        return;
+    }
+    if (offset < 0) offset = 0;
+    const jsize capacity = env->GetArrayLength(inputObj);
+    const jsize inputLength = size < 0 ? capacity - offset : size;
+    if (offset > capacity || inputLength < 0 || inputLength > capacity - offset ||
+        inputLength > env->GetArrayLength(outputObj) || inputLength % 2 != 0) {
+        env->ThrowNew(env->FindClass("java/lang/IllegalArgumentException"), "Invalid stereo PCM bounds");
+        return;
+    }
 
     auto input = env->GetIntArrayElements(inputObj, nullptr);
     auto output = env->GetIntArrayElements(outputObj, nullptr);
+    if (input == nullptr || output == nullptr) {
+        if (input != nullptr) env->ReleaseIntArrayElements(inputObj, input, JNI_ABORT);
+        if (output != nullptr) env->ReleaseIntArrayElements(outputObj, output, JNI_ABORT);
+        return;
+    }
     dsp->processInt32Multiplexd(dsp, input + offset, output, inputLength / 2);
     env->ReleaseIntArrayElements(inputObj, input, JNI_ABORT);
     env->ReleaseIntArrayElements(outputObj, output, 0);
@@ -293,6 +313,11 @@ Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_processInt8U24(
 
     auto input = env->GetIntArrayElements(inputObj, nullptr);
     auto output = env->GetIntArrayElements(outputObj, nullptr);
+    if (input == nullptr || output == nullptr) {
+        if (input != nullptr) env->ReleaseIntArrayElements(inputObj, input, JNI_ABORT);
+        if (output != nullptr) env->ReleaseIntArrayElements(outputObj, output, JNI_ABORT);
+        return nullptr;
+    }
     dsp->processInt8_24Multiplexd(dsp, input, output, inputLength / 2);
     env->ReleaseIntArrayElements(inputObj, input, JNI_ABORT);
     env->ReleaseIntArrayElements(outputObj, output, 0);
@@ -305,16 +330,26 @@ Java_me_timschneeberger_rootlessjamesdsp_interop_JamesDspWrapper_processFloat(JN
 {
     DECLARE_DSP_V
 
-    jsize inputLength;
-    if(size < 0)
-        inputLength = env->GetArrayLength(inputObj);
-    else
-        inputLength = size;
-    if(offset < 0)
-        offset = 0;
+    if (inputObj == nullptr || outputObj == nullptr) {
+        env->ThrowNew(env->FindClass("java/lang/IllegalArgumentException"), "Null PCM array");
+        return;
+    }
+    if (offset < 0) offset = 0;
+    const jsize capacity = env->GetArrayLength(inputObj);
+    const jsize inputLength = size < 0 ? capacity - offset : size;
+    if (offset > capacity || inputLength < 0 || inputLength > capacity - offset ||
+        inputLength > env->GetArrayLength(outputObj) || inputLength % 2 != 0) {
+        env->ThrowNew(env->FindClass("java/lang/IllegalArgumentException"), "Invalid stereo PCM bounds");
+        return;
+    }
 
     auto input = env->GetFloatArrayElements(inputObj, nullptr);
     auto output = env->GetFloatArrayElements(outputObj, nullptr);
+    if (input == nullptr || output == nullptr) {
+        if (input != nullptr) env->ReleaseFloatArrayElements(inputObj, input, JNI_ABORT);
+        if (output != nullptr) env->ReleaseFloatArrayElements(outputObj, output, JNI_ABORT);
+        return;
+    }
 
     dsp->processFloatMultiplexd(dsp, input + offset, output, inputLength / 2);
 

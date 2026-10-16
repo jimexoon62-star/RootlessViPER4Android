@@ -82,3 +82,8 @@ target_include_directories(jamesdsp_hal PUBLIC
 # own target, which emits the same filename. The packaging step renames it when
 # copying into the module, where the audio server expects libjamesdsp.so.
 target_link_libraries(jamesdsp_hal ${log-lib})
+
+# Verify APK native linkage and support Android 16 KiB page devices.
+foreach(native_target jamesdsp jamesdsp-wrapper jdspimprestoolbox crashlytics-connector)
+    target_link_options(${native_target} PRIVATE -Wl,--no-undefined -Wl,-z,max-page-size=16384 -Wl,-z,noexecstack)
+endforeach()

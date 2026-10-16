@@ -9,9 +9,14 @@ import me.timschneeberger.rootlessjamesdsp.session.shared.BaseSessionDatabase
 import me.timschneeberger.rootlessjamesdsp.utils.MutedAudioEffectFactory
 import timber.log.Timber
 
-class RootlessSessionDatabase(context: Context) : BaseSessionDatabase(context) {
+class RootlessSessionDatabase(context: Context, private val factory: MutedAudioEffectFactory = MutedAudioEffectFactory()) : BaseSessionDatabase(context) {
 
-    private val factory by lazy { MutedAudioEffectFactory() }
+    private var destroyed = false
+    @Synchronized override fun destroy() {
+        destroyed = true
+        suspendMuting()
+        super.destroy()
+    }
     private var sessionLossListener: OnSessionLossListener? = null
     private var appProblemListener: OnAppProblemListener? = null
 
@@ -35,7 +40,23 @@ class RootlessSessionDatabase(context: Context) : BaseSessionDatabase(context) {
         return true
     }
 
-    override fun shouldAddSession(id: Int, uid: Int, packageName: String) = true
+    @Volatile private var mutingReady = false
+
+    @Synchronized fun suspendMuting() {
+        if (!mutingReady) return
+        mutingReady = false
+        factory.suspendMuting()
+        clearSessions()
+    }
+
+    @Synchronized fun resumeMuting(): Boolean {
+        if (destroyed || mutingReady) return false
+        factory.resume()
+        mutingReady = true
+        return true
+    }
+
+    override fun shouldAddSession(id: Int, uid: Int, packageName: String) = mutingReady
 
     override fun createSession(id: Int, uid: Int, packageName: String): MutedEffectSession? {
         val muteEffect = factory.make(id, packageName)
@@ -50,14 +71,7 @@ class RootlessSessionDatabase(context: Context) : BaseSessionDatabase(context) {
 
     override fun onSessionRemoved(item: IEffectSession) {
         (item as MutedEffectSession).run {
-            try {
-                audioMuteEffect?.enabled = false
-                audioMuteEffect?.release()
-            }
-            catch (ex: Exception) {
-                Timber.e("onSessionRemoved: effect already destroyed")
-                Timber.d(ex)
-            }
+            audioMuteEffect?.let { factory.release(it) }
         }
     }
 

@@ -9,120 +9,83 @@ import timber.log.Timber
 import java.util.*
 
 class MutedAudioEffectFactory {
+    private val ownership = MuteOwnership<AudioEffect>()
+    private val handler = android.os.Handler(android.os.Looper.getMainLooper())
     var sessionLossListener: ((sid: Int, packageName: String) -> Unit)? = null
 
-    fun make(sid: Int, packageName: String): AudioEffect? {
-        if(!isDeviceCompatible())
-            return null
+    fun resume() = ownership.resume()
+    fun suspendMuting() = ownership.suspendAll(::releaseNative)
+    fun release(effect: AudioEffect) = ownership.release(effect, ::releaseNative)
 
-        for ((name, uuid) in supportedTypeUuids) {
-            if(!AudioEffectHidden.isEffectTypeAvailable(uuid))
-                continue
-
-            try {
-                return make(name, sid, packageName)
-            }
+    private fun releaseNative(effect: AudioEffect) {
+        try { effect.setEnableStatusListener(null) }
+        catch (ex: Exception) { Timber.e(ex, "Mute enable listener detach failed") }
+        try { effect.setControlStatusListener(null) }
+        catch (ex: Exception) { Timber.e(ex, "Mute control listener detach failed") }
+        try {
+            val status = effect.setEnabled(false)
+            if (status != AudioEffect.SUCCESS) Timber.e("Mute disable status=%d; attempting release", status)
+        } catch (ex: Exception) { Timber.e(ex, "Mute disable failed; attempting release") }
+        // One immediate retry only; cleanup cannot enter an unbounded loop.
+        repeat(2) { attempt ->
+            try { effect.release(); Timber.i("MUTE_RELEASED native effect release returned"); return }
             catch (ex: Exception) {
-                Timber.e("Failed to attach $name effect to session $sid (pkg: $packageName; message: ${ex.message})")
+                Timber.e(ex, "Mute release failed (attempt %d/2)", attempt + 1)
             }
+        }
+        Timber.e("CRITICAL: mute release failed after both attempts; native release unconfirmed")
+    }
+
+    fun make(sid: Int, packageName: String): AudioEffect? {
+        if (!isDeviceCompatible()) return null
+        for ((type, uuid) in supportedTypeUuids) {
+            if (!AudioEffectHidden.isEffectTypeAvailable(uuid)) continue
+            try { return make(type, sid, packageName) }
+            catch (ex: Exception) { Timber.w(ex, "Mute attachment failed (%s)", type.name) }
         }
         return null
     }
 
     fun make(type: MuteEffects, sid: Int, packageName: String): AudioEffect? {
-        val name = type.name
-        Timber.d("make: Creating $name effect instance")
-
-        val muteEffect: AudioEffect?
-        try {
-            muteEffect = when (type) {
-                MuteEffects.DynamicsProcessing -> {
-                    sdkAbove<AudioEffect?>(VERSION_CODES.P) {
-                        with(DynamicsProcessing(Int.MAX_VALUE, sid, null)) {
-                            setInputGainAllChannelsTo(-200f)
-                            this
-                        }
-                    }.below {
-                        Timber.e("DynamicsProcessing unsupported below P")
-                        null
-                    }
-                }
+        return ownership.create({
+            when (type) {
+                MuteEffects.DynamicsProcessing -> DynamicsProcessing(Int.MAX_VALUE, sid, null)
+                MuteEffects.Volume -> Refine.unsafeCast<AudioEffect>(AudioEffectHidden(
+                    volumeHiddenTypeUuid, AudioEffectHidden.EFFECT_TYPE_NULL, Int.MAX_VALUE, sid))
+            }
+        }, { muteEffect ->
+            when (type) {
+                MuteEffects.DynamicsProcessing ->
+                    (muteEffect as DynamicsProcessing).setInputGainAllChannelsTo(-200f)
                 MuteEffects.Volume -> {
-                    with(AudioEffectHidden(
-                        volumeHiddenTypeUuid,
-                        AudioEffectHidden.EFFECT_TYPE_NULL,
-                        Int.MAX_VALUE,
-                        sid)
-                    ) {
-                        setParameter(VolumeParams.MUTE.ordinal, 1)
-                        setParameter(VolumeParams.LEVEL.ordinal, -96)
-                        Refine.unsafeCast(this)
+                    val hidden = Refine.unsafeCast<AudioEffectHidden>(muteEffect)
+                    hidden.setParameter(VolumeParams.MUTE.ordinal, 1)
+                    hidden.setParameter(VolumeParams.LEVEL.ordinal, -96)
+                }
+            }
+            muteEffect.enabled = true
+            fun reportLoss(effect: AudioEffect) {
+                // Never enter the database while holding the ownership monitor.
+                handler.post {
+                    if (ownership.contains(effect)) sessionLossListener?.invoke(sid, packageName)
+                }
+            }
+            muteEffect.setEnableStatusListener { effect, enabled ->
+                ownership.mutate(effect) {
+                    if (!enabled) {
+                        // A disabled effect is a pipeline fault. Do not fight teardown
+                        // or a competing owner by repeatedly re-enabling muting.
+                        reportLoss(effect)
                     }
                 }
             }
-        }
-        catch (ex: IllegalArgumentException) {
-            Timber.e("make: Effect not supported")
-            Timber.i(ex)
-            throw ex
-        }
-        catch (ex: UnsupportedOperationException) {
-            Timber.e("make: Effect library not loaded")
-            Timber.i(ex)
-            throw ex
-        }
-        catch (ex: RuntimeException) {
-            Timber.e("make: Runtime exception")
-            Timber.i(ex)
-            throw ex
-        }
-
-        muteEffect ?: return null
-
-        muteEffect.enabled = true
-        muteEffect.setEnableStatusListener { effect, enabled ->
-            if (!enabled) {
-                try {
-                    if(SdkCheck.isPie && effect is DynamicsProcessing)
-                        effect.setInputGainAllChannelsTo(-200f)
-                    effect.enabled = true
-                    Timber.d("$name effect re-enabled (session $sid)")
-                }
-                catch(ex: Exception)
-                {
-                    /* Triggered if another app takes full control over effect */
-                    Timber.w("Failed to re-enable $name effect (session $sid)")
-                    Timber.w(ex)
-                    sessionLossListener?.invoke(sid, packageName)
+            muteEffect.setControlStatusListener { effect, granted ->
+                ownership.mutate(effect) {
+                    if (!granted) reportLoss(effect)
+                    // Regaining control never implicitly re-applies suppression.
                 }
             }
-        }
-        muteEffect.setControlStatusListener { effect, controlGranted ->
-            if(!controlGranted)
-            {
-                sessionLossListener?.invoke(sid, packageName)
-            }
-            else {
-                try {
-                    if(SdkCheck.isPie && effect is DynamicsProcessing)
-                        effect.setInputGainAllChannelsTo(-200f)
-                    effect.enabled = true
-                    Timber.d("$name effect regained control (session $sid)")
-                }
-                catch(ex: Exception)
-                {
-                    Timber.w("Failed to regain control over $name effect (session $sid)")
-                    Timber.w(ex)
-                    sessionLossListener?.invoke(sid, packageName)
-                }
-            }
-            Timber.d(
-                "$name effect control %s",
-                if (controlGranted) " returned" else "taken (session $sid)"
-            )
-        }
-
-        return muteEffect
+        }, ::releaseNative)
     }
 
     companion object {

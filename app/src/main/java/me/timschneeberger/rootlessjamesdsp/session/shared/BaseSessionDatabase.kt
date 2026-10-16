@@ -23,18 +23,19 @@ abstract class BaseSessionDatabase(protected val context: Context) {
     protected abstract fun createSession(id: Int, uid: Int, packageName: String): IEffectSession?
     protected abstract fun onSessionRemoved(item: IEffectSession)
 
-    fun destroy()
+    @Synchronized open fun destroy()
     {
         isDisposing = true
         clearSessions()
     }
 
-    fun clearSessions(){
+    @Synchronized fun clearSessions(){
         sessionList.forEach { (_, session) -> onSessionRemoved(session) }
         sessionList.clear()
+        changeCallbacks.toList().forEach { it.onSessionChanged(HashMap(sessionList)) }
     }
 
-    fun update(dump: ISessionInfoDump)
+    @Synchronized fun update(dump: ISessionInfoDump)
     {
         if(isDisposing) {
             Timber.d("update: SessionDatabase is disposing; ignoring dump")
@@ -70,7 +71,8 @@ abstract class BaseSessionDatabase(protected val context: Context) {
         removedSessions.forEach { removeSession(it.key) }
     }
 
-    fun addSession(sid: Int, uid: Int, packageName: String, replace: Boolean = false){
+    @Synchronized fun addSession(sid: Int, uid: Int, packageName: String, replace: Boolean = false){
+        if(isDisposing || sessionList.containsKey(sid) && !replace) return
         if(!shouldAddSession(sid, uid, packageName)) {
             return
         }
@@ -96,22 +98,22 @@ abstract class BaseSessionDatabase(protected val context: Context) {
                 .filter { it.value.packageName == packageName }
                 .keys
                 .forEach(::removeSession)
-            changeCallbacks.forEach { it.onSessionChanged(sessionList) }
+            changeCallbacks.forEach { it.onSessionChanged(HashMap(sessionList)) }
         }
 
         Timber.d("Found new session: sid=$sid; $packageName")
         sessionList[sid] = createSession(sid, uid, packageName) ?: return
         Timber.d("Successfully added session $sid")
 
-        changeCallbacks.forEach { it.onSessionChanged(sessionList) }
+        changeCallbacks.forEach { it.onSessionChanged(HashMap(sessionList)) }
     }
 
-    fun removeSession(sid: Int) {
+    @Synchronized fun removeSession(sid: Int) {
         sessionList[sid]?.let { it ->
             Timber.d("Removed session: session ${sid}; data: $it")
             onSessionRemoved(it)
             sessionList.remove(sid)
-            changeCallbacks.forEach { it.onSessionChanged(sessionList) }
+            changeCallbacks.forEach { it.onSessionChanged(HashMap(sessionList)) }
         }
     }
 
@@ -125,7 +127,7 @@ abstract class BaseSessionDatabase(protected val context: Context) {
      * chosen any apps yet is asking for, so the caller passes null until they
      * have picked at least one.
      */
-    fun setAllowedUids(uids: Array<Int>?) {
+    @Synchronized fun setAllowedUids(uids: Array<Int>?) {
         allowedUids = uids
         if (uids == null)
             return
@@ -135,10 +137,10 @@ abstract class BaseSessionDatabase(protected val context: Context) {
         rejected.forEach { (_, session) -> onSessionRemoved(session) }
         rejected.map { it.key }.forEach { sid -> sessionList.remove(sid) }
         if (notify)
-            changeCallbacks.forEach { it.onSessionChanged(sessionList) }
+            changeCallbacks.forEach { it.onSessionChanged(HashMap(sessionList)) }
     }
 
-    fun setExcludedUids(uids: Array<Int>) {
+    @Synchronized fun setExcludedUids(uids: Array<Int>) {
         excludedUids = uids
 
         val excludedSessions = sessionList.filter {
@@ -148,15 +150,15 @@ abstract class BaseSessionDatabase(protected val context: Context) {
         excludedSessions.forEach { (_, session) -> onSessionRemoved(session) }
         excludedSessions.map { it.key }.forEach { sid -> sessionList.remove(sid) }
         if(notify)
-            changeCallbacks.forEach { it.onSessionChanged(sessionList) }
+            changeCallbacks.forEach { it.onSessionChanged(HashMap(sessionList)) }
     }
 
-    fun registerOnSessionChangeListener(changeListener: OnSessionChangeListener) {
+    @Synchronized fun registerOnSessionChangeListener(changeListener: OnSessionChangeListener) {
         changeCallbacks.add(changeListener)
         changeListener.onSessionChanged(sessionList)
     }
 
-    fun unregisterOnSessionChangeListener(changeListener: OnSessionChangeListener) {
+    @Synchronized fun unregisterOnSessionChangeListener(changeListener: OnSessionChangeListener) {
         changeCallbacks.remove(changeListener)
     }
 

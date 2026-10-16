@@ -22,6 +22,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -106,6 +107,8 @@ abstract class BaseSessionManager(protected val context: Context) : DumpManager.
     {
         Timber.d("Destroying SessionDumpManager")
 
+        pollingScope.cancel()
+        preferences.unregisterOnSharedPreferenceChangeListener(preferencesListener)
         dumpManager.unregisterOnDumpMethodChangeListener(this)
 
         audioPlaybackCallback?.let { audioManager.unregisterAudioPlaybackCallback(it) }
