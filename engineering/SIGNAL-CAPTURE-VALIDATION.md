@@ -17,3 +17,23 @@ The standalone probe is not delivered for owner installation. If it passes, owne
 ## Execution
 
 Build/test commands and outcomes will be recorded after execution. Physical HONOR/Spotify/Bluetooth acceptance remains outstanding. This revision must not be described as restoring Spotify processing until that is demonstrated.
+
+Local frozen-runtime build (6aada4c): `python engineering/build.py -Pandroid.injected.build.abi=arm64-v8a -Pandroid.injected.testOnly=false :app:testRootlessFdroidReleaseUnitTest :app:assembleRootlessFdroidRelease :audio-capture-probe:assembleDebug :app:assembleRootlessFdroidReleaseAndroidTest` succeeded in 58 seconds. 74 JVM tests passed with zero failures/errors/skips. The actual ARM64 APK passed signature, absence of testOnly, ZIP, 16 KiB APK alignment and native ABI/dependency/export checks. Embedded runtime source was verified as 6aada4c. SHA-256: `16db64d81869c2faa56d7b8d4ab3b49807a1b276499419364894a61d7ea1e94c`.
+
+Executed failures retained for clarity: the first fixture build used Files.writeString, unavailable in Android SDK stubs, and was corrected to Files.write. CI attempts 39070532421 and 39070612017 passed startup/update and the five native tests, then failed to locate the standalone probe APK; capture was not executed in either attempt. Harness commit 92c5bd2 finds the actual intermediates/APK path. `git diff --exit-code 6aada4c 92c5bd2 -- app/src buildSrc audio-capture-probe settings.gradle` confirms identical application/probe runtime sources; only CI/harness files changed. Run 39071145835 then executed the probe but failed because intentional writer interruption was classified as an error. Source correction 9bbcd6d distinguishes intentional cleanup. Attempt 39071844878 accidentally reused a stale pre-correction fixture APK, verified by its old DEX error string; it is not a passing capture test. The corrected artifact was selected from the actual outputs directory and its DEX was checked for the new classifier and absence of the old message before rerun.
+
+## Executed Android capture result
+
+Final fixture/native run https://github.com/jimexoon62-star/RootlessViPER4Android/actions/runs/39072145337 completed successfully. It reused the unchanged x86_64 application and instrumentation APKs from run 39071145835, with the separate fixture rebuilt from 9bbcd6d. QA revision 1dcf82a includes the verified fixture binary/checksum and shorter capture-only harness. No application runtime source changed from 6aada4c.
+
+| Stage | Returned stereo samples | RMS | Peak | Source head (frames) |
+|---|---:|---:|---:|---:|
+| Capture allowed | 335872 | 0.0640319393 | 0.100006104 | 237184 |
+| System-only capture | 335872 | 0 | 0 | 239360 |
+| Capture allowed again | 335872 | 0.0640314638 | 0.100006104 | 240448 |
+
+NativeAudioRecoveryTest: OK (5 tests), instrumentation code -1. CapturedSignalTest: OK (1 test), code -1. The latter verifies separate left/right reference frequencies, native +6 dB gain on every captured sample, complete nonblocking writes, and advancing replacement playback head. These are six executed Android instrumentation tests, separate from the 74 JVM tests.
+
+Startup/original-to-candidate upgrade/fresh-install checks passed in earlier runs before the fixture-stage failures; those full runs are correctly marked failed. The final capture-only run did not repeat the full startup sequence. The delivered APK is ARM64; the executed emulator APK is x86_64. No physical-device or independently audible output claim is made. This is not a complete test of the actual RootlessAudioProcessorService/Spotify/muting path.
+
+The status is an aggregate indication of session policy and captured/output signal progress, not proof that a particular application's sound is being processed. The required owner gate is still a short actual Spotify/Bluetooth playback and gain comparison, then the longer acceptance suite if it passes. No physical device is attached to this workspace.
