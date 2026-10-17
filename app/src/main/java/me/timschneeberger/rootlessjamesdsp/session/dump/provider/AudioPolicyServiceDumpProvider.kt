@@ -10,6 +10,7 @@ import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.ge
 import me.timschneeberger.rootlessjamesdsp.utils.isRootless
 import timber.log.Timber
 import java.util.Locale
+import me.timschneeberger.rootlessjamesdsp.utils.PlaybackCapturePolicy
 
 class AudioPolicyServiceDumpProvider : ISessionDumpProvider {
 
@@ -29,6 +30,7 @@ class AudioPolicyServiceDumpProvider : ISessionDumpProvider {
         val captureAllowedRegex = """allowPlaybackCapture=(\S+)(?:\s*,).+packageName=(\S+)""".toRegex()
 
         val sessions = hashMapOf<Int, AudioSessionDumpEntry>()
+        val nativeFlags = PlaybackCapturePolicy.parseNativeFlags(dump)
 
         var matches = sessionRegex.findAll(dump)
         if(matches.count() <= 0)
@@ -49,7 +51,7 @@ class AudioPolicyServiceDumpProvider : ISessionDumpProvider {
                 }
 
                 val pkg = context.getPackageNameFromUid(uid) ?: uid.toString()
-                sessions[sid] = AudioSessionDumpEntry(uid, pkg, usage, content)
+                sessions[sid] = AudioSessionDumpEntry(uid, pkg, usage, content, nativeFlags[sid to uid])
                 Timber.v("Found session id $sid (uid $uid; usage $usage; content $content; pkg $pkg)")
 
             } catch (ex: NumberFormatException) {

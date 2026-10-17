@@ -83,11 +83,11 @@ class DumpManager constructor(val context: Context): KoinComponent {
         return null
     }
 
-    fun dumpCaptureAllowlistLog(): ISessionPolicyInfoDump? {
+    fun dumpCaptureAllowlistLog(): me.timschneeberger.rootlessjamesdsp.session.dump.data.AudioPolicyServiceDump? {
         // Only AudioPolicyService contains this data
-        var dump: ISessionPolicyInfoDump? = null
+        var dump: me.timschneeberger.rootlessjamesdsp.session.dump.data.AudioPolicyServiceDump? = null
         try {
-            dump = availableDumpMethods[Method.AudioPolicyService]?.dump(context) as? ISessionPolicyInfoDump
+            dump = availableDumpMethods[Method.AudioPolicyService]?.dump(context) as? me.timschneeberger.rootlessjamesdsp.session.dump.data.AudioPolicyServiceDump
         }
         catch (ex: Exception) {
             Timber.e("Exception raised while dumping allowlist info using method ${Method.AudioPolicyService.name}")

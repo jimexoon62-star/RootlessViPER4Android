@@ -22,11 +22,14 @@ class RootlessSessionManager(context: Context) : BaseSessionManager(context)
     }
 
     override fun handleSessionDump(sessionDump: ISessionInfoDump?) {
-        if(sessionDump is ISessionPolicyInfoDump) {
-            sessionPolicyDatabase.update(sessionDump)
-        }
-        else {
-            dumpManager.dumpCaptureAllowlistLog()?.let { sessionPolicyDatabase.update(it) }
+        // Public AudioPlaybackConfiguration flags can differ from the native
+        // policy attributes (notably AAudio). Never use public zero flags to
+        // override an actual NO_MEDIA_PROJECTION restriction.
+        val policy = sessionDump as? me.timschneeberger.rootlessjamesdsp.session.dump.data.AudioPolicyServiceDump
+            ?: dumpManager.dumpCaptureAllowlistLog()
+        policy?.let {
+            sessionPolicyDatabase.update(it)
+            sessionDatabase.updateCaptureRestrictions(it.sessions)
         }
 
         sessionDump?.let { sessionDatabase.update(it) }
