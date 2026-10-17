@@ -28,6 +28,8 @@ class RootlessSessionDatabase(context: Context, private val factory: MutedAudioE
             .keys.toList().forEach(::removeSession)
     }
 
+    @Synchronized fun hasCaptureRestrictions() = captureRestricted.isNotEmpty()
+
     private var destroyed = false
     @Synchronized override fun destroy() {
         destroyed = true

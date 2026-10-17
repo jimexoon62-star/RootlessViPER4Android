@@ -60,6 +60,18 @@ object ServiceNotificationHelper: KoinComponent {
             ?.notify(Notifications.ID_SERVICE_STATUS, createServiceNotification(context, sessions))
     }
 
+    fun captureStatusText(status: me.timschneeberger.rootlessjamesdsp.utils.CaptureStatus): Int = when (status) {
+            me.timschneeberger.rootlessjamesdsp.utils.CaptureStatus.SIGNAL_PROGRESS -> R.string.capture_signal_progress
+            me.timschneeberger.rootlessjamesdsp.utils.CaptureStatus.RESTRICTED -> R.string.capture_restricted
+            me.timschneeberger.rootlessjamesdsp.utils.CaptureStatus.DIRECT -> R.string.capture_direct
+            else -> R.string.capture_checking
+        }
+
+    fun pushCaptureStatus(context: Context, status: me.timschneeberger.rootlessjamesdsp.utils.CaptureStatus) {
+        context.getSystemService<NotificationManager>()?.notify(Notifications.ID_SERVICE_STATUS,
+            createServiceNotification(context, context.getString(R.string.capture_status_title), context.getString(captureStatusText(status))))
+    }
+
     fun pushServiceNotificationLegacy(context: Context) {
         context.getSystemService<NotificationManager>()
             ?.notify(Notifications.ID_SERVICE_STATUS, createServiceNotificationLegacy(context))
@@ -77,6 +89,8 @@ object ServiceNotificationHelper: KoinComponent {
     }
 
     fun createServiceNotification(context: Context, sessions: Array<IEffectSession>): Notification {
+        if (isRootless()) return createServiceNotification(context,
+            context.getString(R.string.capture_status_title), context.getString(R.string.capture_checking))
         val apps = sessions.distinct().joinToString(", ") {
             // Rootless uses UIDs primarily internally, while Root has a guaranteed package name
             if(isRootless()) {

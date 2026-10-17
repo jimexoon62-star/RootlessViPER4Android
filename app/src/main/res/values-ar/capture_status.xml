@@ -1,0 +1,7 @@
+<resources>
+    <string name="capture_status_title">حالة صوت ViPER</string>
+    <string name="capture_checking">في انتظار إشارة صوت قابلة للمعالجة</string>
+    <string name="capture_signal_progress">تم رصد إشارة صوت؛ إخراج الصوت المعالج يتقدم</string>
+    <string name="capture_restricted">مصدر يمنع التقاط صوته؛ يظل صوته الأصلي مباشرًا</string>
+    <string name="capture_direct">المعالجة متوقفة؛ تم طلب استعادة الصوت الأصلي</string>
+</resources>

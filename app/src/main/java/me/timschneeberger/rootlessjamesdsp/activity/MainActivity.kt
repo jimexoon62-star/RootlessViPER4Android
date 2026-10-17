@@ -34,6 +34,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import me.timschneeberger.rootlessjamesdsp.utils.CaptureStatus
+import me.timschneeberger.rootlessjamesdsp.utils.notifications.ServiceNotificationHelper
 import kotlinx.coroutines.withContext
 import me.timschneeberger.rootlessjamesdsp.BuildConfig
 import me.timschneeberger.rootlessjamesdsp.MainApplication
@@ -110,6 +112,9 @@ class MainActivity : BaseActivity() {
 
                 processorService = (service as BaseAudioProcessorService.LocalBinder).service
                 processorServiceBound = true
+                (processorService as? RootlessAudioProcessorService)?.currentCaptureStatus?.let {
+                    binding.toolbar.subtitle = getString(ServiceNotificationHelper.captureStatusText(it))
+                }
 
                 if (isRootless())
                     binding.powerToggle.isToggled = true
@@ -127,7 +132,12 @@ class MainActivity : BaseActivity() {
     private var broadcastReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             when (intent.action) {
+                CaptureStatus.ACTION_CHANGED -> {
+                    if (isRootless()) runCatching { CaptureStatus.valueOf(intent.getStringExtra("status") ?: "") }
+                        .getOrNull()?.let { binding.toolbar.subtitle = getString(ServiceNotificationHelper.captureStatusText(it)) }
+                }
                 Constants.ACTION_SERVICE_STOPPED -> {
+                    if (isRootless()) binding.toolbar.subtitle = null
                     if(isRootless())
                         binding.powerToggle.isToggled = false
                 }
@@ -400,6 +410,7 @@ class MainActivity : BaseActivity() {
 
         IntentFilter(Constants.ACTION_SERVICE_STOPPED).apply {
             addAction(Constants.ACTION_SERVICE_STARTED)
+            addAction(CaptureStatus.ACTION_CHANGED)
             addAction(Constants.ACTION_PRESET_LOADED)
             registerLocalReceiver(broadcastReceiver, this)
         }

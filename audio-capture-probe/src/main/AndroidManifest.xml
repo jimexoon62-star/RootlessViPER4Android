@@ -1,0 +1,9 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION"/>
+    <application android:theme="@android:style/Theme.Material.Light" android:label="RV4A synthetic capture probe" android:allowAudioPlaybackCapture="true">
+        <activity android:name=".ProbeActivity" android:exported="true"/>
+        <service android:name=".ProbeService" android:exported="false" android:foregroundServiceType="mediaProjection"/>
+    </application>
+</manifest>

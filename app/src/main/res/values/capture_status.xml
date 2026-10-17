@@ -1,0 +1,7 @@
+<resources>
+    <string name="capture_status_title">ViPER audio status</string>
+    <string name="capture_checking">Waiting for a usable audio signal</string>
+    <string name="capture_signal_progress">Audio signal detected; processed output is progressing</string>
+    <string name="capture_restricted">A source blocks audio capture; its original audio stays direct</string>
+    <string name="capture_direct">Processing stopped; original playback requested</string>
+</resources>

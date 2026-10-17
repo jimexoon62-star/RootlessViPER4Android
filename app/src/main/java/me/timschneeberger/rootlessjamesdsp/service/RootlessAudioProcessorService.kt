@@ -73,6 +73,7 @@ import me.timschneeberger.rootlessjamesdsp.utils.OutputIntegrity
 import me.timschneeberger.rootlessjamesdsp.utils.CaptureSignalLease
 import me.timschneeberger.rootlessjamesdsp.utils.RouteChangeDetector
 import me.timschneeberger.rootlessjamesdsp.utils.WorkerRetirement
+import me.timschneeberger.rootlessjamesdsp.utils.CaptureStatus
 
 
 @RequiresApi(Build.VERSION_CODES.Q)
@@ -105,6 +106,22 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
     @Volatile private var inputFrames = 0L
     @Volatile private var outputFrames = 0L
     @Volatile private var outputGated = false
+    @Volatile private var signalLeaseActive = false
+    @Volatile private var replacementSignal = false
+    @Volatile private var lastStatus: CaptureStatus? = null
+    val currentCaptureStatus: CaptureStatus? get() = lastStatus
+    private fun updateCaptureStatus(headAdvanced: Boolean = false) {
+        val status = CaptureStatus.resolve(failed.get() || isProcessorDisposing,
+            sessionManager.sessionDatabase.hasCaptureRestrictions(),
+            signalLeaseActive && replacementSignal, notificationSessions.isNotEmpty(),
+            headAdvanced && SystemClock.elapsedRealtime() - lastProgress < 1500L)
+        if (status != lastStatus) {
+            lastStatus = status
+            sendLocalBroadcast(Intent(CaptureStatus.ACTION_CHANGED).putExtra("status", status.name))
+            ServiceNotificationHelper.pushCaptureStatus(this, status)
+            Timber.i("CAPTURE_STATUS: %s", status.name)
+        }
+    }
     private var lastHead = 0
     private var lastUnderruns = 0
     private var stalledOutputChecks = 0
@@ -162,6 +179,7 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
         }
         Timber.e("Audio fail-open: %s", reason)
         mainHandler.post {
+            if (!isServiceDisposing) updateCaptureStatus()
             if (isServiceDisposing) return@post
             if (recoverable && !terminalFailure.get() && mediaProjection != null && recoveryBudget.take()) {
                 try { stopRecording() }
@@ -193,9 +211,11 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
                     stalledOutputChecks = if (head == lastHead && delta > 0) stalledOutputChecks + 1 else 0
                     if (stalledOutputChecks >= 6)
                         failOpen("output head stalled with growing underruns for 3s")
+                    updateCaptureStatus(head != lastHead)
                     lastHead = head; lastUnderruns = underruns
                 } catch (ex: Exception) { failOpen("output health unavailable") }
             }
+            if (track == null || pipelineIdle || outputGated || failed.get()) updateCaptureStatus()
             mainHandler.postDelayed(this, 500L)
         }
     }
@@ -457,10 +477,8 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
 
             notificationSessions = sessionList.values.toTypedArray()
 
-            ServiceNotificationHelper.pushServiceNotification(
-                this@RootlessAudioProcessorService,
-                notificationSessions
-            )
+            lastStatus = null
+            mainHandler.post { if (!isServiceDisposing) updateCaptureStatus() }
         }
     }
 
@@ -607,6 +625,8 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
         }
         lastHead = 0; lastUnderruns = 0; stalledOutputChecks = 0
         outputGated = false
+        signalLeaseActive = false
+        replacementSignal = false
         silenceGateSecs = 0.0
         lastProgress = SystemClock.elapsedRealtime()
         pipelineIdle = false
@@ -625,10 +645,7 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
                 track.addOnRoutingChangedListener(routeListener, mainHandler)
                 // Rebuilding the processing pipeline must not overwrite the current
                 // session-aware notification with a false "idle" state.
-                ServiceNotificationHelper.pushServiceNotification(
-                    applicationContext,
-                    notificationSessions,
-                )
+                mainHandler.post { if (!isServiceDisposing) updateCaptureStatus() }
 
                 val floatBuffer = FloatArray(bufferSize)
                 val floatOutBuffer = FloatArray(bufferSize)
@@ -764,6 +781,8 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
                             outputFrames += floatOutBuffer.size / 2
                         }
                     }
+                    signalLeaseActive = mayMute
+                    replacementSignal = !bufferGated && integrity.outputPeak > 1e-7
                     pipelinePrimed = mayMute
                     outputGated = bufferGated
                     lastProgress = SystemClock.elapsedRealtime()

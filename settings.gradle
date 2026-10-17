@@ -20,3 +20,6 @@ include ':codeview'
 include ':hidden-api-stubs'
 include ':hidden-api-impl'
 include ':hidden-api-refined'
+
+// Synthetic-audio engineering fixture; never packaged in the ViPER application.
+include ':audio-capture-probe'
