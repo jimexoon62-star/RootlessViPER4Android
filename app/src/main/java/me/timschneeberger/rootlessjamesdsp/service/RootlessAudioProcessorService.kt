@@ -72,6 +72,7 @@ import me.timschneeberger.rootlessjamesdsp.utils.RecoveryBudget
 import me.timschneeberger.rootlessjamesdsp.utils.OutputIntegrity
 import me.timschneeberger.rootlessjamesdsp.utils.CaptureSignalLease
 import me.timschneeberger.rootlessjamesdsp.utils.RouteChangeDetector
+import me.timschneeberger.rootlessjamesdsp.utils.WorkerRetirement
 
 
 @RequiresApi(Build.VERSION_CODES.Q)
@@ -89,6 +90,9 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
     @Volatile private var recreateRecorderRequested = false
     private var recorderThread: Thread? = null
     private lateinit var engine: JamesDspLocalEngine
+    private val engineRetirement = WorkerRetirement {
+        try { engine.close() } catch (ex: Throwable) { Timber.e(ex, "Failed to close engine") }
+    }
     private val isRunning: Boolean
         get() = recorderThread != null
 
@@ -372,9 +376,7 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
         // Stop recording and release engine
         try { stopRecording() }
         catch (ex: Exception) { Timber.e(ex, "Failed to stop recording") }
-        try { if (recorderThread?.isAlive != true) engine.close()
-              else Timber.e("Native engine retained because audio worker is still alive") }
-        catch (ex: Throwable) { Timber.e(ex, "Failed to close engine") }
+        engineRetirement.retire()
 
         // Stop foreground service
         try { stopForeground(STOP_FOREGROUND_REMOVE) }
@@ -617,6 +619,7 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
         }
 
         // TODO Move all audio-related code to C++
+        engineRetirement.workerStarted()
         recorderThread = Thread {
             try {
                 track.addOnRoutingChangedListener(routeListener, mainHandler)
@@ -783,17 +786,23 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
             } catch (e: InterruptedException) {
                 if (!isProcessorDisposing) failOpen("unexpected audio thread interruption")
             } catch (e: Throwable) {
-                Timber.e(e, "Processing failed")
-                failOpen("processing exception: ${e.javaClass.simpleName}")
+                if (!isProcessorDisposing && !isServiceDisposing) {
+                    Timber.e(e, "Processing failed")
+                    failOpen("processing exception: ${e.javaClass.simpleName}")
+                }
             } finally {
-                sessionManager.sessionDatabase.suspendMuting()
-                try { recorder.stop() } catch (ex: Exception) { Timber.w(ex) }
-                try { track.pause(); track.flush() } catch (ex: Exception) { Timber.w(ex) }
-                try { recorder.release() } catch (ex: Exception) { Timber.e(ex) }
-                try { track.removeOnRoutingChangedListener(routeListener) } catch (ex: Exception) { Timber.w(ex) }
-                try { track.release() } catch (ex: Exception) { Timber.e(ex) }
-                activeRecorder = null
-                activeTrack = null
+                try {
+                    sessionManager.sessionDatabase.suspendMuting()
+                    try { recorder.stop() } catch (ex: Exception) { Timber.w(ex) }
+                    try { track.pause(); track.flush() } catch (ex: Exception) { Timber.w(ex) }
+                    try { recorder.release() } catch (ex: Exception) { Timber.e(ex) }
+                    try { track.removeOnRoutingChangedListener(routeListener) } catch (ex: Exception) { Timber.w(ex) }
+                    try { track.release() } catch (ex: Exception) { Timber.e(ex) }
+                    activeRecorder = null
+                    activeTrack = null
+                } finally {
+                    engineRetirement.workerFinished()
+                }
             }
         }
         recorderThread!!.start()
@@ -810,6 +819,10 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
             recorderThread!!.interrupt()
             recorderThread!!.join(500)
             if (recorderThread!!.isAlive) {
+                if (isServiceDisposing) {
+                    Timber.w("Audio worker shutdown pending; native close deferred until worker exits")
+                    return
+                }
                 failOpen("audio worker did not terminate within 500ms")
                 throw IllegalStateException("Refusing duplicate audio worker")
             }
