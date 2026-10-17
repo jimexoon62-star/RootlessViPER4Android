@@ -1,0 +1,14 @@
+{
+  "tests": 69,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "source": "4b84a28",
+  "version": "4.0.5-policy-safety-test",
+  "versionCode": 132,
+  "sha256": "9669447e29057f1b80b2decc8db9869b4c90c9d49888e93dc9bf22ab20d1ebf6",
+  "bytes": 33616438,
+  "package": "com.alienware377.viper4android.rootless",
+  "physical_device_testing": "not executed",
+  "spotify_processing": "not demonstrated; native restriction identified"
+}
