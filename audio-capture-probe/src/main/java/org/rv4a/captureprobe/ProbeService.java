@@ -43,7 +43,7 @@ public class ProbeService extends Service {
         } finally {
             if(recorder!=null){try{recorder.stop();}catch(Exception ignored){}recorder.release();}
             if(projection!=null)projection.stop();
-            try{Files.writeString(getFilesDir().toPath().resolve("result.json"),result.toString());}catch(Exception e){android.util.Log.e("CaptureProbe","Cannot save result",e);}
+            try{Files.write(getFilesDir().toPath().resolve("result.json"),result.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));}catch(Exception e){android.util.Log.e("CaptureProbe","Cannot save result",e);}
             stopForeground(STOP_FOREGROUND_REMOVE); stopSelf();
         }
     }
