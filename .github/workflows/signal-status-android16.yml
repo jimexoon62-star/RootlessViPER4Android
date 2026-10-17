@@ -42,3 +42,11 @@ jobs:
         with:
           name: android16-startup-evidence
           path: startup-evidence/
+      - name: Retain built test APKs for reproducible fixture reruns
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: built-signal-test-apks
+          path: |
+            app/build/intermediates/apk/**/*.apk
+            audio-capture-probe/build/intermediates/apk/**/*.apk

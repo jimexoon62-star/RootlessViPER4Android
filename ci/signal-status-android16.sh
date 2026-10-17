@@ -38,7 +38,9 @@ grep -q 'OK (' startup-evidence/native-instrumentation.txt
 
 # Separate synthetic source. Consent is accepted through the real system UI,
 # never by changing projection app-ops or privileged capture restrictions.
-adb install -r audio-capture-probe/build/outputs/apk/debug/audio-capture-probe-debug.apk
+probeapk=$(find audio-capture-probe/build -path '*/apk/*' -name 'audio-capture-probe-debug.apk' | head -1)
+test -f "$probeapk"
+adb install -r "$probeapk"
 adb shell pm grant org.rv4a.captureprobe android.permission.RECORD_AUDIO
 adb shell am start -W -n org.rv4a.captureprobe/.ProbeActivity
 accepted=false
