@@ -1,7 +1,0 @@
-org.rv4a.captureprobe.audio-capture-probe-pngs-0 /workspace/RootlessViPER4Android/audio-capture-probe/build/generated/res/pngs/debug
-org.rv4a.captureprobe.audio-capture-probe-resValues-1 /workspace/RootlessViPER4Android/audio-capture-probe/build/generated/res/resValues/debug
-org.rv4a.captureprobe.audio-capture-probe-packageDebugResources-2 /workspace/RootlessViPER4Android/audio-capture-probe/build/intermediates/incremental/debug/packageDebugResources/merged.dir
-org.rv4a.captureprobe.audio-capture-probe-packageDebugResources-3 /workspace/RootlessViPER4Android/audio-capture-probe/build/intermediates/incremental/debug/packageDebugResources/stripped.dir
-org.rv4a.captureprobe.audio-capture-probe-debug-4 /workspace/RootlessViPER4Android/audio-capture-probe/build/intermediates/merged_res/debug/mergeDebugResources
-org.rv4a.captureprobe.audio-capture-probe-debug-5 /workspace/RootlessViPER4Android/audio-capture-probe/src/debug/res
-org.rv4a.captureprobe.audio-capture-probe-main-6 /workspace/RootlessViPER4Android/audio-capture-probe/src/main/res
