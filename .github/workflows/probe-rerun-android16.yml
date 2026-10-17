@@ -43,7 +43,7 @@ jobs:
           arch: x86_64
           ram-size: 2048M
           disable-animations: true
-          script: bash ci/signal-status-android16.sh
+          script: bash ci/probe-only-android16.sh
       - name: Upload emulator evidence
         if: always()
         uses: actions/upload-artifact@v4

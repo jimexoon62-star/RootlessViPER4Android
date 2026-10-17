@@ -1,1 +1,1 @@
-bbfbaa9917fe3d6d0ecbee433e41005982b2538ef81f47162ebcb390a7b5fb4d  test-fixtures/audio-capture-probe-debug.apk
+68c94b0399126b7b9b8b7feb63a982c339e090e62cab51b9854394aa094ec770  test-fixtures/audio-capture-probe-debug.apk
