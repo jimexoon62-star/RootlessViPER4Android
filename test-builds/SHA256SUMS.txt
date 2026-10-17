@@ -1,1 +1,0 @@
-bc1798e8e11c299a70fc892422ad309cdb381853ab87f0db644a7b6c622098d6  RootlessViPER4Android-4.0.3-install-fix-arm64.apk
