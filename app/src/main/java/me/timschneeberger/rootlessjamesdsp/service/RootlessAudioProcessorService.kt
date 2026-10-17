@@ -106,11 +106,13 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
     @Volatile private var inputFrames = 0L
     @Volatile private var outputFrames = 0L
     @Volatile private var outputGated = false
+    @Volatile private var statusVisible = false
     @Volatile private var signalLeaseActive = false
     @Volatile private var replacementSignal = false
     @Volatile private var lastStatus: CaptureStatus? = null
     val currentCaptureStatus: CaptureStatus? get() = lastStatus
     private fun updateCaptureStatus(headAdvanced: Boolean = false) {
+        if (!statusVisible || isServiceDisposing) return
         val status = CaptureStatus.resolve(failed.get() || isProcessorDisposing,
             sessionManager.sessionDatabase.hasCaptureRestrictions(),
             signalLeaseActive && replacementSignal, notificationSessions.isNotEmpty(),
@@ -264,6 +266,7 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
 
     override fun onCreate() {
         super.onCreate()
+        statusVisible = true
 
         // Get reference to system services
         audioManager = getSystemService<AudioManager>()!!
@@ -374,6 +377,7 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
     }
 
     override fun onDestroy() {
+        statusVisible = false
         isServiceDisposing = true
         mainHandler.removeCallbacks(watchdog)
         mainHandler.removeCallbacks(routeRestart)

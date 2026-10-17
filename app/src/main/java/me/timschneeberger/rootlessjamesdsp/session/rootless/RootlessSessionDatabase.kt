@@ -18,7 +18,8 @@ class RootlessSessionDatabase(context: Context, private val factory: MutedAudioE
      * optional app-exclusion filter. Release existing suppression immediately. */
     @Synchronized fun updateCaptureRestrictions(sessions: Map<Int, AudioSessionDumpEntry>) {
         val restricted = sessions.filterValues {
-            PlaybackCapturePolicy.isRestricted(it.captureFlags)
+            it.uid != android.os.Process.myUid() && it.packageName != context.packageName &&
+                PlaybackCapturePolicy.isRestricted(it.captureFlags)
         }.map { it.key to it.value.uid }.toSet()
         if (restricted != captureRestricted) {
             Timber.w("CAPTURE_POLICY: native restricted sessions=%d; original playback remains direct", restricted.size)
