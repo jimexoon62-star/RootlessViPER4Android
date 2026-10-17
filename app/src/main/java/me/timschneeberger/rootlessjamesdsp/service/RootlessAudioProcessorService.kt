@@ -104,6 +104,7 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
     private var lastHead = 0
     private var lastUnderruns = 0
     private var stalledOutputChecks = 0
+    @Volatile private var selectedPhysicalOutputId: Int? = null
     private var routeChanges = 0
     private var routeWindowAt = 0L
     private val routeRestart = Runnable {
@@ -113,11 +114,19 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
         }
     }
     private val devices = object : AudioDeviceCallback() {
-        override fun onAudioDevicesAdded(addedDevices: Array<out AudioDeviceInfo>) = routeChanged()
-        override fun onAudioDevicesRemoved(removedDevices: Array<out AudioDeviceInfo>) = routeChanged()
+        // AudioRecord playback capture adds/removes REMOTE_SUBMIX devices.
+        // Rebuilding on these notifications creates a self-sustaining loop.
+        // Additions are inventory changes, not proof of a selected-route change.
+        override fun onAudioDevicesAdded(addedDevices: Array<out AudioDeviceInfo>) = Unit
+        override fun onAudioDevicesRemoved(removedDevices: Array<out AudioDeviceInfo>) {
+            val selected = selectedPhysicalOutputId ?: return
+            if (removedDevices.any { it.isSink && it.type != AudioDeviceInfo.TYPE_REMOTE_SUBMIX && it.id == selected })
+                routeChanged("selected physical output removed")
+        }
     }
-    private fun routeChanged() {
+    private fun routeChanged(reason: String) {
         if (!isRunning || isServiceDisposing || failed.get()) return
+        Timber.i("ROUTE_RECOVERY: %s", reason)
         val now = SystemClock.elapsedRealtime()
         if (now - routeWindowAt > 30000L) { routeWindowAt = now; routeChanges = 0 }
         if (++routeChanges > 4) { failOpen("route changes exceeded 4/30s", false); return }
@@ -586,7 +595,13 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
         activeTrack = track
         val routeDetector = RouteChangeDetector()
         val routeListener = AudioRouting.OnRoutingChangedListener { routing ->
-            if (routing === activeTrack && routeDetector.changed(routing.routedDevice?.id)) routeChanged()
+            if (routing === activeTrack) {
+                val output = routing.routedDevice
+                if (output != null && output.isSink && output.type != AudioDeviceInfo.TYPE_REMOTE_SUBMIX) {
+                    selectedPhysicalOutputId = output.id
+                    if (routeDetector.changed(output.id)) routeChanged("selected physical output changed")
+                }
+            }
         }
         lastHead = 0; lastUnderruns = 0; stalledOutputChecks = 0
         outputGated = false
@@ -790,6 +805,7 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
             isProcessorDisposing = true
             sessionManager.sessionDatabase.suspendMuting()
         }
+        selectedPhysicalOutputId = null
         if (recorderThread != null) {
             recorderThread!!.interrupt()
             recorderThread!!.join(500)

@@ -77,7 +77,12 @@ class FailOpenServiceTest {
     @Test fun bluetoothRouteChangeReleasesBeforeDebouncedRestart() {
         val f = Fixture()
         f.set("recorderThread", Thread {})
-        (f.field("devices") as android.media.AudioDeviceCallback).onAudioDevicesRemoved(emptyArray())
+        f.set("selectedPhysicalOutputId", 42)
+        val output = mock(android.media.AudioDeviceInfo::class.java)
+        `when`(output.isSink).thenReturn(true)
+        `when`(output.type).thenReturn(android.media.AudioDeviceInfo.TYPE_BLUETOOTH_A2DP)
+        `when`(output.id).thenReturn(42)
+        (f.field("devices") as android.media.AudioDeviceCallback).onAudioDevicesRemoved(arrayOf(output))
         f.assertReleased()
         assertTrue(f.field("isProcessorDisposing") as Boolean)
     }
@@ -88,6 +93,40 @@ class FailOpenServiceTest {
         f.set("isProcessorDisposing", true); f.set("recreateRecorderRequested", false)
         f.service.requestAudioRecordRecreation()
         assertFalse(f.field("recreateRecorderRequested") as Boolean)
+    }
+
+    @Test fun repeatedCaptureSubmixNotificationsCannotRestartOrExhaustRouteBudget() {
+        val f = Fixture()
+        f.set("recorderThread", Thread {})
+        f.set("selectedPhysicalOutputId", 42)
+        val virtual = mock(android.media.AudioDeviceInfo::class.java)
+        `when`(virtual.isSink).thenReturn(true)
+        `when`(virtual.type).thenReturn(android.media.AudioDeviceInfo.TYPE_REMOTE_SUBMIX)
+        `when`(virtual.id).thenReturn(42)
+        val listener = f.field("devices") as android.media.AudioDeviceCallback
+        repeat(100) {
+            listener.onAudioDevicesAdded(arrayOf(virtual))
+            listener.onAudioDevicesRemoved(arrayOf(virtual))
+        }
+        verify(f.factory, never()).release(f.effect)
+        assertEquals(0, f.field("routeChanges"))
+        assertFalse((f.field("failed") as java.util.concurrent.atomic.AtomicBoolean).get())
+    }
+    @Test fun initialInventoryAndUnselectedDevicesDoNotInterruptProcessing() {
+        val f = Fixture()
+        f.set("recorderThread", Thread {}); f.set("selectedPhysicalOutputId", 42)
+        val other = mock(android.media.AudioDeviceInfo::class.java)
+        `when`(other.isSink).thenReturn(true)
+        `when`(other.type).thenReturn(android.media.AudioDeviceInfo.TYPE_BLUETOOTH_A2DP)
+        `when`(other.id).thenReturn(43)
+        val input = mock(android.media.AudioDeviceInfo::class.java)
+        `when`(input.isSink).thenReturn(false)
+        `when`(input.id).thenReturn(42)
+        val listener = f.field("devices") as android.media.AudioDeviceCallback
+        listener.onAudioDevicesAdded(arrayOf(other))
+        listener.onAudioDevicesRemoved(arrayOf(other, input))
+        verify(f.factory, never()).release(f.effect)
+        assertEquals(0, f.field("routeChanges"))
     }
 
 }
