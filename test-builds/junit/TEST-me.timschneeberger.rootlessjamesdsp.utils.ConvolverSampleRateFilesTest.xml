@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="me.timschneeberger.rootlessjamesdsp.utils.ConvolverSampleRateFilesTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-17T21:23:34" hostname="749f25faa5d3" time="0.026">
+  <properties/>
+  <testcase name="exact sample rate selects its assigned file" classname="me.timschneeberger.rootlessjamesdsp.utils.ConvolverSampleRateFilesTest" time="0.024"/>
+  <testcase name="unassigned sample rate uses default file" classname="me.timschneeberger.rootlessjamesdsp.utils.ConvolverSampleRateFilesTest" time="0.0"/>
+  <testcase name="sample rates are formatted accurately in kilohertz" classname="me.timschneeberger.rootlessjamesdsp.utils.ConvolverSampleRateFilesTest" time="0.0"/>
+  <testcase name="assignments survive serialization" classname="me.timschneeberger.rootlessjamesdsp.utils.ConvolverSampleRateFilesTest" time="0.0"/>
+  <testcase name="assignments through 192 kHz are retained and higher rates are rejected" classname="me.timschneeberger.rootlessjamesdsp.utils.ConvolverSampleRateFilesTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

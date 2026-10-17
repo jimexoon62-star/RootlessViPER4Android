@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="me.timschneeberger.rootlessjamesdsp.utils.MuteOwnershipTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-10-17T21:23:35" hostname="749f25faa5d3" time="0.178">
+  <properties/>
+  <testcase name="repeatedEnableDisableAndLateCallbacks" classname="me.timschneeberger.rootlessjamesdsp.utils.MuteOwnershipTest" time="0.003"/>
+  <testcase name="noMuteBeforeOutputReady" classname="me.timschneeberger.rootlessjamesdsp.utils.MuteOwnershipTest" time="0.0"/>
+  <testcase name="simultaneousShutdownAndCallbacksCannotReinstateMute" classname="me.timschneeberger.rootlessjamesdsp.utils.MuteOwnershipTest" time="0.171"/>
+  <testcase name="normalLifecycleAndIdempotentShutdown" classname="me.timschneeberger.rootlessjamesdsp.utils.MuteOwnershipTest" time="0.001"/>
+  <testcase name="sessionRemovalReleasesOnlyOnce" classname="me.timschneeberger.rootlessjamesdsp.utils.MuteOwnershipTest" time="0.0"/>
+  <testcase name="failedAttachmentReleasesConstructedEffect" classname="me.timschneeberger.rootlessjamesdsp.utils.MuteOwnershipTest" time="0.001"/>
+  <testcase name="queuedCallbackCannotReenableReleasedEffect" classname="me.timschneeberger.rootlessjamesdsp.utils.MuteOwnershipTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

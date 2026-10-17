@@ -1,0 +1,262 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.10.2/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :buildSrc:checkKotlinGradlePluginConfigurationErrors
+> Task :buildSrc:compileKotlin UP-TO-DATE
+> Task :buildSrc:compileJava NO-SOURCE
+> Task :buildSrc:compileGroovy NO-SOURCE
+> Task :buildSrc:pluginDescriptors UP-TO-DATE
+> Task :buildSrc:processResources NO-SOURCE
+> Task :buildSrc:classes UP-TO-DATE
+> Task :buildSrc:jar UP-TO-DATE
+
+> Configure project :app
+WARNING: The option setting 'android.defaults.buildfeatures.buildconfig=true' is deprecated.
+The current default is 'false'.
+It will be removed in version 9.0 of the Android Gradle plugin.
+To keep using this feature, add the following to your module-level build.gradle files:
+    android.buildFeatures.buildConfig = true
+or from Android Studio, click: `Refactor` > `Migrate BuildConfig to Gradle Build Files`.
+
+> Task :app:verifyLaunchAllowlist
+Launch allowlist OK: 10 packages, 4 labels
+
+> Task :app:preBuild
+> Task :app:preRootlessFdroidReleaseBuild
+> Task :app:buildKotlinToolingMetadata UP-TO-DATE
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:dataBindingMergeDependencyArtifactsRootlessFdroidRelease UP-TO-DATE
+> Task :app:generateRootlessFdroidReleaseResValues UP-TO-DATE
+> Task :app:generateRootlessFdroidReleaseResources UP-TO-DATE
+> Task :app:preRootlessFullPreviewBuild
+> Task :app:configureCMakeRelWithDebInfo[arm64-v8a]
+> Task :app:buildCMakeRelWithDebInfo[arm64-v8a][crashlytics-connector,jamesdsp,etc]
+> Task :app:mergeRootlessFdroidReleaseJniLibFolders UP-TO-DATE
+> Task :codeview:preBuild UP-TO-DATE
+> Task :codeview:preReleaseBuild UP-TO-DATE
+> Task :codeview:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :codeview:mergeReleaseNativeLibs NO-SOURCE
+> Task :codeview:copyReleaseJniLibsProjectOnly UP-TO-DATE
+> Task :hidden-api-impl:preBuild UP-TO-DATE
+> Task :hidden-api-impl:preReleaseBuild UP-TO-DATE
+> Task :hidden-api-impl:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :hidden-api-impl:mergeReleaseNativeLibs NO-SOURCE
+> Task :hidden-api-impl:copyReleaseJniLibsProjectOnly UP-TO-DATE
+> Task :app:mergeRootlessFdroidReleaseNativeLibs UP-TO-DATE
+> Task :app:injectCrashlyticsBuildIdsRootlessFdroidRelease UP-TO-DATE
+> Task :app:injectCrashlyticsMappingFileIdRootlessFdroidRelease UP-TO-DATE
+> Task :app:processRootlessFdroidReleaseGoogleServices UP-TO-DATE
+> Task :codeview:generateReleaseResValues UP-TO-DATE
+> Task :codeview:generateReleaseResources UP-TO-DATE
+> Task :codeview:packageReleaseResources UP-TO-DATE
+> Task :hidden-api-impl:generateReleaseResValues UP-TO-DATE
+> Task :hidden-api-impl:generateReleaseResources UP-TO-DATE
+> Task :hidden-api-impl:packageReleaseResources UP-TO-DATE
+> Task :app:mergeRootlessFdroidReleaseResources UP-TO-DATE
+> Task :app:packageRootlessFdroidReleaseResources UP-TO-DATE
+> Task :app:parseRootlessFdroidReleaseLocalResources UP-TO-DATE
+> Task :codeview:parseReleaseLocalResources UP-TO-DATE
+> Task :codeview:generateReleaseRFile UP-TO-DATE
+> Task :hidden-api-impl:parseReleaseLocalResources UP-TO-DATE
+> Task :hidden-api-impl:generateReleaseRFile UP-TO-DATE
+> Task :app:dataBindingGenBaseClassesRootlessFdroidRelease UP-TO-DATE
+> Task :app:generateRootlessFdroidReleaseBuildConfig
+> Task :codeview:writeReleaseAarMetadata UP-TO-DATE
+> Task :hidden-api-impl:writeReleaseAarMetadata UP-TO-DATE
+> Task :app:checkRootlessFdroidReleaseAarMetadata UP-TO-DATE
+> Task :app:mapRootlessFdroidReleaseSourceSetPaths UP-TO-DATE
+> Task :app:createRootlessFdroidReleaseCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksRootlessFdroidRelease UP-TO-DATE
+> Task :codeview:extractDeepLinksRelease UP-TO-DATE
+> Task :codeview:processReleaseManifest UP-TO-DATE
+> Task :hidden-api-impl:extractDeepLinksRelease UP-TO-DATE
+> Task :hidden-api-impl:processReleaseManifest UP-TO-DATE
+> Task :app:processRootlessFdroidReleaseMainManifest UP-TO-DATE
+> Task :app:processRootlessFdroidReleaseManifest UP-TO-DATE
+> Task :app:processRootlessFdroidReleaseManifestForPackage UP-TO-DATE
+> Task :codeview:compileReleaseLibraryResources UP-TO-DATE
+> Task :hidden-api-impl:compileReleaseLibraryResources UP-TO-DATE
+> Task :app:processRootlessFdroidReleaseResources UP-TO-DATE
+> Task :codeview:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :codeview:generateReleaseBuildConfig UP-TO-DATE
+> Task :codeview:compileReleaseKotlin UP-TO-DATE
+> Task :codeview:javaPreCompileRelease UP-TO-DATE
+> Task :codeview:compileReleaseJavaWithJavac UP-TO-DATE
+> Task :codeview:bundleLibCompileToJarRelease UP-TO-DATE
+> Task :hidden-api-stubs:compileJava UP-TO-DATE
+> Task :hidden-api-stubs:processResources NO-SOURCE
+> Task :hidden-api-stubs:classes UP-TO-DATE
+> Task :hidden-api-stubs:jar UP-TO-DATE
+> Task :hidden-api-impl:generateReleaseBuildConfig UP-TO-DATE
+> Task :hidden-api-impl:javaPreCompileRelease UP-TO-DATE
+> Task :hidden-api-refined:preBuild UP-TO-DATE
+> Task :hidden-api-refined:preReleaseBuild UP-TO-DATE
+> Task :hidden-api-refined:generateReleaseResValues UP-TO-DATE
+> Task :hidden-api-refined:generateReleaseResources UP-TO-DATE
+> Task :hidden-api-refined:packageReleaseResources UP-TO-DATE
+> Task :hidden-api-refined:parseReleaseLocalResources UP-TO-DATE
+> Task :hidden-api-refined:generateReleaseRFile UP-TO-DATE
+> Task :hidden-api-refined:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :hidden-api-refined:generateReleaseBuildConfig UP-TO-DATE
+> Task :hidden-api-refined:compileReleaseKotlin NO-SOURCE
+> Task :hidden-api-refined:javaPreCompileRelease UP-TO-DATE
+> Task :hidden-api-refined:compileReleaseJavaWithJavac UP-TO-DATE
+> Task :hidden-api-refined:transformReleaseClassesWithAsm UP-TO-DATE
+> Task :hidden-api-refined:bundleLibCompileToJarRelease UP-TO-DATE
+> Task :hidden-api-impl:compileReleaseJavaWithJavac UP-TO-DATE
+> Task :hidden-api-impl:transformReleaseClassesWithAsm UP-TO-DATE
+> Task :hidden-api-impl:bundleLibCompileToJarRelease UP-TO-DATE
+> Task :app:javaPreCompileRootlessFdroidRelease UP-TO-DATE
+> Task :codeview:bundleLibRuntimeToJarRelease UP-TO-DATE
+> Task :hidden-api-impl:bundleLibRuntimeToJarRelease UP-TO-DATE
+> Task :app:preRootlessFdroidReleaseUnitTestBuild
+> Task :app:javaPreCompileRootlessFdroidReleaseUnitTest UP-TO-DATE
+> Task :codeview:processReleaseJavaRes UP-TO-DATE
+> Task :hidden-api-impl:processReleaseJavaRes NO-SOURCE
+> Task :app:stripRootlessFdroidReleaseDebugSymbols UP-TO-DATE
+> Task :app:extractRootlessFdroidReleaseNativeSymbolTables UP-TO-DATE
+> Task :app:mergeRootlessFdroidReleaseNativeDebugMetadata UP-TO-DATE
+> Task :app:checkRootlessFdroidReleaseDuplicateClasses UP-TO-DATE
+> Task :app:desugarRootlessFdroidReleaseFileDependencies UP-TO-DATE
+> Task :app:mergeRootlessFdroidReleaseStartupProfile UP-TO-DATE
+> Task :app:mergeExtDexRootlessFdroidRelease UP-TO-DATE
+> Task :codeview:prepareReleaseArtProfile UP-TO-DATE
+> Task :hidden-api-impl:prepareReleaseArtProfile UP-TO-DATE
+> Task :app:mergeRootlessFdroidReleaseArtProfile UP-TO-DATE
+> Task :app:generateRootlessFdroidReleaseAssets UP-TO-DATE
+> Task :codeview:mergeReleaseShaders UP-TO-DATE
+> Task :codeview:compileReleaseShaders NO-SOURCE
+> Task :codeview:generateReleaseAssets UP-TO-DATE
+> Task :codeview:packageReleaseAssets UP-TO-DATE
+> Task :hidden-api-impl:mergeReleaseShaders UP-TO-DATE
+> Task :hidden-api-impl:compileReleaseShaders NO-SOURCE
+> Task :hidden-api-impl:generateReleaseAssets UP-TO-DATE
+> Task :hidden-api-impl:packageReleaseAssets UP-TO-DATE
+> Task :app:mergeRootlessFdroidReleaseAssets UP-TO-DATE
+> Task :app:compressRootlessFdroidReleaseAssets UP-TO-DATE
+> Task :app:extractRootlessFdroidReleaseVersionControlInfo
+> Task :app:optimizeRootlessFdroidReleaseResources UP-TO-DATE
+> Task :app:collectRootlessFdroidReleaseDependencies UP-TO-DATE
+> Task :app:sdkRootlessFdroidReleaseDependencyData UP-TO-DATE
+> Task :app:validateSigningRootlessFdroidRelease UP-TO-DATE
+> Task :app:writeRootlessFdroidReleaseAppMetadata UP-TO-DATE
+> Task :app:writeRootlessFdroidReleaseSigningConfigVersions UP-TO-DATE
+> Task :audio-capture-probe:preBuild UP-TO-DATE
+> Task :audio-capture-probe:preDebugBuild UP-TO-DATE
+> Task :audio-capture-probe:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :audio-capture-probe:generateDebugBuildConfig UP-TO-DATE
+> Task :audio-capture-probe:javaPreCompileDebug UP-TO-DATE
+> Task :audio-capture-probe:checkDebugAarMetadata UP-TO-DATE
+> Task :audio-capture-probe:generateDebugResValues UP-TO-DATE
+> Task :audio-capture-probe:mapDebugSourceSetPaths UP-TO-DATE
+> Task :audio-capture-probe:generateDebugResources UP-TO-DATE
+> Task :audio-capture-probe:mergeDebugResources UP-TO-DATE
+> Task :audio-capture-probe:packageDebugResources UP-TO-DATE
+> Task :audio-capture-probe:parseDebugLocalResources UP-TO-DATE
+> Task :audio-capture-probe:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :audio-capture-probe:extractDeepLinksDebug UP-TO-DATE
+> Task :audio-capture-probe:processDebugMainManifest UP-TO-DATE
+> Task :audio-capture-probe:processDebugManifest UP-TO-DATE
+> Task :audio-capture-probe:processDebugManifestForPackage UP-TO-DATE
+> Task :audio-capture-probe:processDebugResources UP-TO-DATE
+> Task :audio-capture-probe:compileDebugJavaWithJavac UP-TO-DATE
+> Task :audio-capture-probe:mergeDebugShaders UP-TO-DATE
+> Task :audio-capture-probe:compileDebugShaders NO-SOURCE
+> Task :audio-capture-probe:generateDebugAssets UP-TO-DATE
+> Task :audio-capture-probe:mergeDebugAssets UP-TO-DATE
+> Task :audio-capture-probe:compressDebugAssets UP-TO-DATE
+> Task :audio-capture-probe:desugarDebugFileDependencies UP-TO-DATE
+> Task :audio-capture-probe:dexBuilderDebug UP-TO-DATE
+> Task :audio-capture-probe:mergeDebugGlobalSynthetics UP-TO-DATE
+> Task :audio-capture-probe:processDebugJavaRes NO-SOURCE
+> Task :audio-capture-probe:mergeDebugJavaResource UP-TO-DATE
+> Task :audio-capture-probe:checkDebugDuplicateClasses UP-TO-DATE
+> Task :audio-capture-probe:mergeExtDexDebug UP-TO-DATE
+> Task :audio-capture-probe:mergeLibDexDebug UP-TO-DATE
+> Task :audio-capture-probe:mergeProjectDexDebug UP-TO-DATE
+> Task :audio-capture-probe:mergeDebugJniLibFolders UP-TO-DATE
+> Task :audio-capture-probe:mergeDebugNativeLibs NO-SOURCE
+> Task :audio-capture-probe:stripDebugDebugSymbols NO-SOURCE
+> Task :audio-capture-probe:validateSigningDebug UP-TO-DATE
+> Task :audio-capture-probe:writeDebugAppMetadata UP-TO-DATE
+> Task :audio-capture-probe:writeDebugSigningConfigVersions UP-TO-DATE
+> Task :audio-capture-probe:packageDebug UP-TO-DATE
+> Task :audio-capture-probe:createDebugApkListingFileRedirect UP-TO-DATE
+> Task :audio-capture-probe:assembleDebug UP-TO-DATE
+> Task :app:preRootlessFdroidReleaseAndroidTestBuild SKIPPED
+> Task :app:dataBindingMergeDependencyArtifactsRootlessFdroidReleaseAndroidTest UP-TO-DATE
+> Task :app:generateRootlessFdroidReleaseAndroidTestResValues UP-TO-DATE
+> Task :app:generateRootlessFdroidReleaseAndroidTestResources UP-TO-DATE
+> Task :app:mergeRootlessFdroidReleaseAndroidTestResources UP-TO-DATE
+> Task :app:dataBindingGenBaseClassesRootlessFdroidReleaseAndroidTest UP-TO-DATE
+> Task :app:processRootlessFdroidReleaseAndroidTestManifest UP-TO-DATE
+> Task :app:generateRootlessFdroidReleaseAndroidTestBuildConfig
+> Task :app:checkRootlessFdroidReleaseAndroidTestAarMetadata UP-TO-DATE
+> Task :app:mapRootlessFdroidReleaseAndroidTestSourceSetPaths UP-TO-DATE
+> Task :app:processRootlessFdroidReleaseAndroidTestResources UP-TO-DATE
+> Task :app:javaPreCompileRootlessFdroidReleaseAndroidTest UP-TO-DATE
+> Task :app:generateRootlessFdroidReleaseAndroidTestAssets UP-TO-DATE
+> Task :app:mergeRootlessFdroidReleaseAndroidTestAssets UP-TO-DATE
+> Task :app:compressRootlessFdroidReleaseAndroidTestAssets UP-TO-DATE
+> Task :app:checkRootlessFdroidReleaseAndroidTestDuplicateClasses UP-TO-DATE
+> Task :app:desugarRootlessFdroidReleaseAndroidTestFileDependencies UP-TO-DATE
+> Task :app:mergeExtDexRootlessFdroidReleaseAndroidTest UP-TO-DATE
+> Task :app:mergeRootlessFdroidReleaseAndroidTestJniLibFolders UP-TO-DATE
+> Task :app:mergeRootlessFdroidReleaseAndroidTestNativeLibs NO-SOURCE
+> Task :app:stripRootlessFdroidReleaseAndroidTestDebugSymbols NO-SOURCE
+> Task :app:validateSigningRootlessFdroidReleaseAndroidTest UP-TO-DATE
+> Task :app:writeRootlessFdroidReleaseAndroidTestSigningConfigVersions UP-TO-DATE
+> Task :app:kspRootlessFdroidReleaseKotlin
+
+> Task :app:kaptGenerateStubsRootlessFdroidReleaseKotlin
+w: Support for language version 2.0+ in kapt is in Alpha and must be enabled explicitly. Falling back to 1.9.
+
+> Task :app:kaptRootlessFdroidReleaseKotlin SKIPPED
+> Task :app:compileRootlessFdroidReleaseKotlin
+> Task :app:compileRootlessFdroidReleaseJavaWithJavac
+> Task :app:processRootlessFdroidReleaseJavaRes UP-TO-DATE
+> Task :app:bundleRootlessFdroidReleaseClassesToCompileJar
+> Task :app:transformRootlessFdroidReleaseClassesWithAsm
+> Task :app:bundleRootlessFdroidReleaseClassesToRuntimeJar
+> Task :app:kspRootlessFdroidReleaseUnitTestKotlin
+> Task :app:kaptGenerateStubsRootlessFdroidReleaseUnitTestKotlin
+> Task :app:kaptRootlessFdroidReleaseUnitTestKotlin SKIPPED
+> Task :app:compileRootlessFdroidReleaseUnitTestKotlin
+> Task :app:processRootlessFdroidReleaseUnitTestJavaRes UP-TO-DATE
+> Task :app:compileRootlessFdroidReleaseUnitTestJavaWithJavac NO-SOURCE
+> Task :app:transformRootlessFdroidReleaseUnitTestClassesWithAsm
+> Task :app:dexBuilderRootlessFdroidRelease
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+> Task :app:testRootlessFdroidReleaseUnitTest
+> Task :app:mergeRootlessFdroidReleaseGlobalSynthetics UP-TO-DATE
+> Task :app:mergeRootlessFdroidReleaseJavaResource UP-TO-DATE
+> Task :app:mergeDexRootlessFdroidRelease
+> Task :app:kspRootlessFdroidReleaseAndroidTestKotlin
+> Task :app:compileRootlessFdroidReleaseArtProfile
+
+> Task :app:kaptGenerateStubsRootlessFdroidReleaseAndroidTestKotlin
+w: Support for language version 2.0+ in kapt is in Alpha and must be enabled explicitly. Falling back to 1.9.
+
+> Task :app:kaptRootlessFdroidReleaseAndroidTestKotlin SKIPPED
+> Task :app:compileRootlessFdroidReleaseAndroidTestKotlin
+> Task :app:compileRootlessFdroidReleaseAndroidTestJavaWithJavac
+> Task :app:packageRootlessFdroidRelease
+> Task :app:transformRootlessFdroidReleaseAndroidTestClassesWithAsm
+> Task :app:createRootlessFdroidReleaseApkListingFileRedirect UP-TO-DATE
+> Task :app:assembleRootlessFdroidRelease
+> Task :app:dexBuilderRootlessFdroidReleaseAndroidTest
+> Task :app:mergeRootlessFdroidReleaseAndroidTestGlobalSynthetics UP-TO-DATE
+> Task :app:processRootlessFdroidReleaseAndroidTestJavaRes UP-TO-DATE
+> Task :app:mergeRootlessFdroidReleaseAndroidTestJavaResource UP-TO-DATE
+> Task :app:mergeDexRootlessFdroidReleaseAndroidTest
+> Task :app:packageRootlessFdroidReleaseAndroidTest
+> Task :app:createRootlessFdroidReleaseAndroidTestApkListingFileRedirect UP-TO-DATE
+> Task :app:assembleRootlessFdroidReleaseAndroidTest
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.10.2/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 58s
+186 actionable tasks: 31 executed, 155 up-to-date

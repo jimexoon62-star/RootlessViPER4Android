@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="me.timschneeberger.rootlessjamesdsp.session.rootless.RootlessSessionDatabaseTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-17T21:23:34" hostname="749f25faa5d3" time="0.037">
+  <properties/>
+  <testcase name="fatalFailureReleasesAllAndRejectsLateSessions" classname="me.timschneeberger.rootlessjamesdsp.session.rootless.RootlessSessionDatabaseTest" time="0.005"/>
+  <testcase name="duplicateSessionCannotLeakPreviousEffect" classname="me.timschneeberger.rootlessjamesdsp.session.rootless.RootlessSessionDatabaseTest" time="0.002"/>
+  <testcase name="sessionRemovalAndRepeatedShutdownAreIdempotent" classname="me.timschneeberger.rootlessjamesdsp.session.rootless.RootlessSessionDatabaseTest" time="0.03"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

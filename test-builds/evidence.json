@@ -1,0 +1,22 @@
+{
+  "tests": 74,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "source": "6aada4c",
+  "sha256": "16db64d81869c2faa56d7b8d4ab3b49807a1b276499419364894a61d7ea1e94c",
+  "version": "4.0.6-signal-status-test",
+  "versionCode": 133,
+  "bytes": 33619658,
+  "physical_device_testing": "not executed",
+  "capture_integration_ci": "https://github.com/jimexoon62-star/RootlessViPER4Android/actions/runs/39072145337",
+  "capture_integration_result": "success",
+  "emulator_abi": "x86_64",
+  "native_instrumentation_tests": 5,
+  "captured_signal_instrumentation_tests": 1,
+  "allowed_capture_rms": 0.06403193925224229,
+  "restricted_capture_rms": 0,
+  "restored_capture_rms": 0.06403146382753254,
+  "spotify_processing": "not demonstrated",
+  "independent_audible_validation": "not executed"
+}

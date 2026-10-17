@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="me.timschneeberger.rootlessjamesdsp.utils.CaptureSignalLeaseTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-17T21:23:34" hostname="749f25faa5d3" time="0.004">
+  <properties/>
+  <testcase name="indefinitelyZeroCaptureNeverAuthorizesInitialSuppression" classname="me.timschneeberger.rootlessjamesdsp.utils.CaptureSignalLeaseTest" time="0.002"/>
+  <testcase name="intermittentSilenceAndNormalMusicKeepLease" classname="me.timschneeberger.rootlessjamesdsp.utils.CaptureSignalLeaseTest" time="0.0"/>
+  <testcase name="silentSuccessfulReadsStopAuthorizingMuting" classname="me.timschneeberger.rootlessjamesdsp.utils.CaptureSignalLeaseTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

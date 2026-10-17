@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="me.timschneeberger.rootlessjamesdsp.utils.RouteChangeDetectorTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-17T21:23:35" hostname="749f25faa5d3" time="0.0">
+  <properties/>
+  <testcase name="connectedDeviceSwitchIsDetectedAcrossTemporaryNullRoute" classname="me.timschneeberger.rootlessjamesdsp.utils.RouteChangeDetectorTest" time="0.0"/>
+  <testcase name="initialRoutingDoesNotCreateRestartLoop" classname="me.timschneeberger.rootlessjamesdsp.utils.RouteChangeDetectorTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
