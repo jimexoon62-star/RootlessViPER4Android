@@ -16,6 +16,8 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
       - name: Build normally installable x86_64 release and instrumentation
         run: ./gradlew --no-daemon --max-workers=2 -Pandroid.injected.build.abi=x86_64 -Pandroid.injected.testOnly=false :app:assembleRootlessFdroidRelease :app:assembleRootlessFdroidReleaseAndroidTest
       - name: Obtain official baseline
