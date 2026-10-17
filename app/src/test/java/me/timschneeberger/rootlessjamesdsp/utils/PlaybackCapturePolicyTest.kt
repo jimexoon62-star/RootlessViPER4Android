@@ -82,6 +82,16 @@ class PlaybackCapturePolicyTest {
         verify(factory).make(321, "player")
     }
 
+    @Test fun ownOutputCaptureOptOutDoesNotReportAnotherSourceAsBlocked() {
+        val context = mock(Context::class.java)
+        `when`(context.packageName).thenReturn("viper")
+        val db = RootlessSessionDatabase(context, mock(MutedAudioEffectFactory::class.java))
+        db.updateCaptureRestrictions(mapOf(1 to AudioSessionDumpEntry(12345,"viper","USAGE_MEDIA","MUSIC",0x1c00)))
+        assertFalse(db.hasCaptureRestrictions())
+        db.updateCaptureRestrictions(mapOf(2 to AudioSessionDumpEntry(12346,"player","USAGE_MEDIA","MUSIC",0x400)))
+        assertTrue(db.hasCaptureRestrictions())
+    }
+
     @Test fun changedSessionOwnerDoesNotInheritAnotherAppsRestriction() {
         val factory = mock(MutedAudioEffectFactory::class.java)
         val db = RootlessSessionDatabase(mock(Context::class.java), factory)
