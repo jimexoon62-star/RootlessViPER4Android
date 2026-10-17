@@ -70,7 +70,7 @@ public class ProbeService extends Service {
                         else {if(SystemClock.elapsedRealtime()-progress>2000)throw new IllegalStateException("tone stalled");Thread.sleep(3);}
                     }
                 }
-            }catch(Exception e){writerFailed.set(true);}
+            }catch(Exception e){if(!done.get()&&!stopping.get()){writerFailed.set(true);android.util.Log.e("CaptureProbe","Tone writer failed",e);}}
         },"ProbeTone");
         JSONObject stage=new JSONObject(); JSONArray sample=new JSONArray();
         long start=SystemClock.elapsedRealtime(), count=0; double squares=0,peak=0;
@@ -91,7 +91,8 @@ public class ProbeService extends Service {
             if(writer.isAlive())throw new IllegalStateException("tone worker did not exit");
             track.pause();track.flush();track.release();
         }
-        if(writerFailed.get()||stopping.get())throw new IllegalStateException("tone or projection terminated");
+        if(writerFailed.get())throw new IllegalStateException("tone writer failed; see CaptureProbe log");
+        if(stopping.get())throw new IllegalStateException("projection revoked during probe");
         return stage;
     }
 }
