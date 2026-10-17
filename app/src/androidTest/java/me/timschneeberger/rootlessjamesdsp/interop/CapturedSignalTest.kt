@@ -30,6 +30,17 @@ class CapturedSignalTest {
         val values = result.getJSONObject("allowed").getJSONArray("pcm")
         assertEquals(512, values.length())
         val input = FloatArray(values.length()) { values.getDouble(it).toFloat() }
+        fun magnitude(channel: Int, frequency: Double): Double {
+            var real = 0.0; var imaginary = 0.0
+            for (frame in 0 until input.size / 2) {
+                val phase = 2 * Math.PI * frequency * frame / 48000
+                real += input[2 * frame + channel] * kotlin.math.cos(phase)
+                imaginary += input[2 * frame + channel] * kotlin.math.sin(phase)
+            }
+            return kotlin.math.sqrt(real * real + imaginary * imaginary)
+        }
+        assertTrue("Left channel frequency/framing", magnitude(0, 997.0) > 4 * magnitude(0, 1499.0))
+        assertTrue("Right channel frequency/framing", magnitude(1, 1499.0) > 4 * magnitude(1, 997.0))
         val output = FloatArray(input.size)
         val callbacks = object : JamesDspWrapper.JamesDspCallbacks {
             override fun onLiveprogOutput(message: String) {}
@@ -41,6 +52,7 @@ class CapturedSignalTest {
         val handle = JamesDspWrapper.alloc(callbacks)
         assertTrue(handle != 0L)
         try {
+            JamesDspWrapper.setSamplingRate(handle, 48000f, true)
             JamesDspWrapper.setLimiterMode(handle, 2)
             JamesDspWrapper.setPostGain(handle, 6f)
             JamesDspWrapper.processFloat(handle, input, output, 0, input.size)
