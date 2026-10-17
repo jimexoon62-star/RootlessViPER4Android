@@ -1,9 +1,9 @@
 package me.timschneeberger.rootlessjamesdsp.model
 
-data class AudioSessionDumpEntry(val uid: Int, val packageName: String, val usage: String, val content: String)
+data class AudioSessionDumpEntry(val uid: Int, val packageName: String, val usage: String, val content: String, val captureFlags: Int? = null)
 {
     override fun toString(): String {
-        return "uid=$uid; package=$packageName; usage=$usage; content=$content; isUsageRecordable=${isUsageRecordable(usage)}"
+        return "uid=$uid; package=$packageName; usage=$usage; content=$content; isUsageRecordable=${isUsageRecordable(usage)}; nativeCaptureFlags=${captureFlags?.let { "0x" + it.toString(16) } ?: "unknown"}"
     }
 
     fun isUsageRecordable(): Boolean

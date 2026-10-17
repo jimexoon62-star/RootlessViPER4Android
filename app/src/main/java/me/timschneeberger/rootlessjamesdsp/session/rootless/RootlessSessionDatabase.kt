@@ -8,8 +8,25 @@ import me.timschneeberger.rootlessjamesdsp.model.rootless.MutedEffectSession
 import me.timschneeberger.rootlessjamesdsp.session.shared.BaseSessionDatabase
 import me.timschneeberger.rootlessjamesdsp.utils.MutedAudioEffectFactory
 import timber.log.Timber
+import me.timschneeberger.rootlessjamesdsp.utils.PlaybackCapturePolicy
 
 class RootlessSessionDatabase(context: Context, private val factory: MutedAudioEffectFactory = MutedAudioEffectFactory()) : BaseSessionDatabase(context) {
+
+    private var captureRestricted = emptySet<Pair<Int, Int>>()
+
+    /** Native per-track opt-out is mandatory, independent of the user's
+     * optional app-exclusion filter. Release existing suppression immediately. */
+    @Synchronized fun updateCaptureRestrictions(sessions: Map<Int, AudioSessionDumpEntry>) {
+        val restricted = sessions.filterValues {
+            PlaybackCapturePolicy.isRestricted(it.captureFlags)
+        }.map { it.key to it.value.uid }.toSet()
+        if (restricted != captureRestricted) {
+            Timber.w("CAPTURE_POLICY: native restricted sessions=%d; original playback remains direct", restricted.size)
+        }
+        captureRestricted = restricted
+        sessionList.filter { (sid, session) -> (sid to session.uid) in restricted }
+            .keys.toList().forEach(::removeSession)
+    }
 
     private var destroyed = false
     @Synchronized override fun destroy() {
@@ -33,6 +50,7 @@ class RootlessSessionDatabase(context: Context, private val factory: MutedAudioE
     )
 
     override fun shouldAcceptSessionDump(id: Int, session: AudioSessionDumpEntry): Boolean {
+        if (PlaybackCapturePolicy.isRestricted(session.captureFlags)) return false
         if (!session.isUsageRecordable()) {
             Timber.d("Skipped session $id due to usage ($session)")
             return false
@@ -56,7 +74,8 @@ class RootlessSessionDatabase(context: Context, private val factory: MutedAudioE
         return true
     }
 
-    override fun shouldAddSession(id: Int, uid: Int, packageName: String) = mutingReady
+    override fun shouldAddSession(id: Int, uid: Int, packageName: String) =
+        mutingReady && (id to uid) !in captureRestricted
 
     override fun createSession(id: Int, uid: Int, packageName: String): MutedEffectSession? {
         val muteEffect = factory.make(id, packageName)
