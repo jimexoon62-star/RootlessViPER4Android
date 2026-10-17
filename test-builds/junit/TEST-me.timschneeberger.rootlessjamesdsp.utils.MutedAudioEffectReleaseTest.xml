@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="me.timschneeberger.rootlessjamesdsp.utils.MutedAudioEffectReleaseTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-17T07:23:09" hostname="f3ec2e2c56f5" time="0.011">
+  <properties/>
+  <testcase name="releaseFailureHasExactlyOneRetry" classname="me.timschneeberger.rootlessjamesdsp.utils.MutedAudioEffectReleaseTest" time="0.006"/>
+  <testcase name="unreleasedMuteIsExplicitlyRecordedAndOtherEffectsStillRelease" classname="me.timschneeberger.rootlessjamesdsp.utils.MutedAudioEffectReleaseTest" time="0.004"/>
+  <testcase name="disableFailureCannotSkipNativeRelease" classname="me.timschneeberger.rootlessjamesdsp.utils.MutedAudioEffectReleaseTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="me.timschneeberger.rootlessjamesdsp.utils.AudioSampleRateDetectorTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-17T07:23:09" hostname="f3ec2e2c56f5" time="0.003">
+  <properties/>
+  <testcase name="every detected rate through 384 kHz is retained" classname="me.timschneeberger.rootlessjamesdsp.utils.AudioSampleRateDetectorTest" time="0.001"/>
+  <testcase name="detected mixer rates are sorted and retained" classname="me.timschneeberger.rootlessjamesdsp.utils.AudioSampleRateDetectorTest" time="0.0"/>
+  <testcase name="native rate is not added to reported mixer capabilities" classname="me.timschneeberger.rootlessjamesdsp.utils.AudioSampleRateDetectorTest" time="0.0"/>
+  <testcase name="invalid rates are ignored and default is always available" classname="me.timschneeberger.rootlessjamesdsp.utils.AudioSampleRateDetectorTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,229 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.10.2/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :buildSrc:checkKotlinGradlePluginConfigurationErrors
+> Task :buildSrc:pluginDescriptors UP-TO-DATE
+> Task :buildSrc:processResources NO-SOURCE
+> Task :buildSrc:compileKotlin
+> Task :buildSrc:compileJava NO-SOURCE
+> Task :buildSrc:compileGroovy NO-SOURCE
+> Task :buildSrc:classes UP-TO-DATE
+
+> Task :buildSrc:jar
+:jar: No valid plugin descriptors were found in META-INF/gradle-plugins
+
+> Configure project :
+w: file:///workspace/RootlessViPER4Android/build.gradle.kts:24:24: 'getter for buildDir: File!' is deprecated. Deprecated in Java
+
+> Configure project :app
+WARNING: The option setting 'android.defaults.buildfeatures.buildconfig=true' is deprecated.
+The current default is 'false'.
+It will be removed in version 9.0 of the Android Gradle plugin.
+To keep using this feature, add the following to your module-level build.gradle files:
+    android.buildFeatures.buildConfig = true
+or from Android Studio, click: `Refactor` > `Migrate BuildConfig to Gradle Build Files`.
+
+> Task :app:verifyLaunchAllowlist
+Launch allowlist OK: 10 packages, 4 labels
+
+> Task :app:preBuild
+> Task :app:preRootlessFdroidReleaseBuild
+> Task :app:buildKotlinToolingMetadata
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:dataBindingMergeDependencyArtifactsRootlessFdroidRelease
+> Task :app:generateRootlessFdroidReleaseResValues
+> Task :app:generateRootlessFdroidReleaseResources
+> Task :app:preRootlessFullPreviewBuild
+> Task :app:configureCMakeRelWithDebInfo[arm64-v8a]
+> Task :app:buildCMakeRelWithDebInfo[arm64-v8a][crashlytics-connector,jamesdsp,etc]
+> Task :app:mergeRootlessFdroidReleaseJniLibFolders
+> Task :codeview:preBuild UP-TO-DATE
+> Task :codeview:preReleaseBuild UP-TO-DATE
+> Task :codeview:mergeReleaseJniLibFolders
+> Task :codeview:mergeReleaseNativeLibs NO-SOURCE
+> Task :hidden-api-impl:preBuild UP-TO-DATE
+> Task :hidden-api-impl:preReleaseBuild UP-TO-DATE
+> Task :codeview:copyReleaseJniLibsProjectOnly
+> Task :hidden-api-impl:mergeReleaseJniLibFolders
+> Task :hidden-api-impl:mergeReleaseNativeLibs NO-SOURCE
+> Task :hidden-api-impl:copyReleaseJniLibsProjectOnly
+> Task :app:injectCrashlyticsMappingFileIdRootlessFdroidRelease
+> Task :app:processRootlessFdroidReleaseGoogleServices
+> Task :codeview:generateReleaseResValues
+> Task :codeview:generateReleaseResources
+> Task :codeview:packageReleaseResources
+> Task :app:mergeRootlessFdroidReleaseNativeLibs
+> Task :hidden-api-impl:generateReleaseResValues
+> Task :app:injectCrashlyticsBuildIdsRootlessFdroidRelease
+> Task :hidden-api-impl:generateReleaseResources
+> Task :hidden-api-impl:packageReleaseResources
+> Task :codeview:parseReleaseLocalResources
+> Task :codeview:generateReleaseRFile
+> Task :hidden-api-impl:parseReleaseLocalResources
+> Task :hidden-api-impl:generateReleaseRFile
+> Task :app:generateRootlessFdroidReleaseBuildConfig
+> Task :codeview:writeReleaseAarMetadata
+> Task :hidden-api-impl:writeReleaseAarMetadata
+> Task :app:checkRootlessFdroidReleaseAarMetadata
+> Task :app:mapRootlessFdroidReleaseSourceSetPaths
+> Task :app:createRootlessFdroidReleaseCompatibleScreenManifests
+> Task :app:extractDeepLinksRootlessFdroidRelease
+> Task :codeview:extractDeepLinksRelease
+> Task :app:mergeRootlessFdroidReleaseResources
+> Task :codeview:processReleaseManifest
+> Task :app:packageRootlessFdroidReleaseResources
+> Task :hidden-api-impl:extractDeepLinksRelease
+> Task :hidden-api-impl:processReleaseManifest
+> Task :app:parseRootlessFdroidReleaseLocalResources
+> Task :app:processRootlessFdroidReleaseMainManifest
+> Task :app:dataBindingGenBaseClassesRootlessFdroidRelease
+> Task :app:processRootlessFdroidReleaseManifest
+> Task :app:processRootlessFdroidReleaseManifestForPackage
+> Task :codeview:compileReleaseLibraryResources
+> Task :codeview:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :hidden-api-impl:compileReleaseLibraryResources
+> Task :codeview:generateReleaseBuildConfig
+warn: removing resource com.alienware377.viper4android.rootless:string/onboarding_adb_dump_not_granted without required default value.
+warn: removing resource com.alienware377.viper4android.rootless:string/onboarding_adb_dump_not_granted_title without required default value.
+warn: removing resource com.alienware377.viper4android.rootless:string/onboarding_adb_manual_step5b without required default value.
+
+> Task :app:processRootlessFdroidReleaseResources
+> Task :codeview:javaPreCompileRelease
+> Task :hidden-api-stubs:compileJava UP-TO-DATE
+> Task :hidden-api-stubs:processResources NO-SOURCE
+> Task :hidden-api-stubs:classes UP-TO-DATE
+> Task :hidden-api-stubs:jar UP-TO-DATE
+> Task :hidden-api-impl:generateReleaseBuildConfig
+> Task :hidden-api-impl:javaPreCompileRelease
+> Task :hidden-api-refined:preBuild UP-TO-DATE
+> Task :hidden-api-refined:preReleaseBuild UP-TO-DATE
+> Task :hidden-api-refined:generateReleaseResValues
+> Task :hidden-api-refined:generateReleaseResources
+> Task :hidden-api-refined:packageReleaseResources
+> Task :hidden-api-refined:parseReleaseLocalResources
+> Task :hidden-api-refined:generateReleaseRFile
+> Task :hidden-api-refined:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :hidden-api-refined:generateReleaseBuildConfig
+> Task :hidden-api-refined:compileReleaseKotlin NO-SOURCE
+> Task :hidden-api-refined:javaPreCompileRelease
+
+> Task :hidden-api-refined:compileReleaseJavaWithJavac
+warning: Supported source version 'RELEASE_8' from annotation processor 'org.gradle.api.internal.tasks.compile.processing.TimeTrackingProcessor' less than -source '17'
+1 warning
+
+> Task :hidden-api-refined:transformReleaseClassesWithAsm
+> Task :hidden-api-refined:bundleLibCompileToJarRelease
+
+> Task :hidden-api-impl:compileReleaseJavaWithJavac
+warning: unknown enum constant Scope.LIBRARY_GROUP_PREFIX
+  reason: class file for androidx.annotation.RestrictTo$Scope not found
+warning: unknown enum constant Scope.LIBRARY_GROUP_PREFIX
+warning: unknown enum constant Scope.LIBRARY_GROUP_PREFIX
+warning: unknown enum constant Scope.LIBRARY_GROUP_PREFIX
+warning: unknown enum constant Scope.LIBRARY_GROUP_PREFIX
+warning: unknown enum constant Scope.LIBRARY_GROUP_PREFIX
+warning: unknown enum constant Scope.LIBRARY_GROUP_PREFIX
+7 warnings
+
+> Task :hidden-api-impl:transformReleaseClassesWithAsm
+> Task :hidden-api-impl:bundleLibCompileToJarRelease
+> Task :app:javaPreCompileRootlessFdroidRelease
+> Task :hidden-api-impl:bundleLibRuntimeToJarRelease
+> Task :app:preRootlessFdroidReleaseUnitTestBuild
+> Task :app:javaPreCompileRootlessFdroidReleaseUnitTest
+> Task :hidden-api-impl:processReleaseJavaRes NO-SOURCE
+> Task :app:stripRootlessFdroidReleaseDebugSymbols
+> Task :app:extractRootlessFdroidReleaseNativeSymbolTables
+> Task :app:mergeRootlessFdroidReleaseNativeDebugMetadata
+> Task :app:checkRootlessFdroidReleaseDuplicateClasses
+> Task :app:desugarRootlessFdroidReleaseFileDependencies
+> Task :app:mergeRootlessFdroidReleaseStartupProfile
+> Task :codeview:compileReleaseKotlin
+> Task :app:mergeExtDexRootlessFdroidRelease
+> Task :codeview:compileReleaseJavaWithJavac
+> Task :codeview:bundleLibCompileToJarRelease
+> Task :codeview:bundleLibRuntimeToJarRelease
+> Task :codeview:processReleaseJavaRes
+> Task :codeview:prepareReleaseArtProfile
+> Task :hidden-api-impl:prepareReleaseArtProfile
+> Task :app:mergeRootlessFdroidReleaseArtProfile
+> Task :app:generateRootlessFdroidReleaseAssets UP-TO-DATE
+> Task :codeview:mergeReleaseShaders
+> Task :codeview:compileReleaseShaders NO-SOURCE
+> Task :codeview:generateReleaseAssets UP-TO-DATE
+> Task :codeview:packageReleaseAssets
+> Task :hidden-api-impl:mergeReleaseShaders
+> Task :hidden-api-impl:compileReleaseShaders NO-SOURCE
+> Task :hidden-api-impl:generateReleaseAssets UP-TO-DATE
+> Task :hidden-api-impl:packageReleaseAssets
+> Task :app:mergeRootlessFdroidReleaseAssets
+> Task :app:compressRootlessFdroidReleaseAssets
+> Task :app:extractRootlessFdroidReleaseVersionControlInfo
+> Task :app:optimizeRootlessFdroidReleaseResources
+> Task :app:collectRootlessFdroidReleaseDependencies
+> Task :app:sdkRootlessFdroidReleaseDependencyData
+> Task :app:validateSigningRootlessFdroidRelease
+> Task :app:writeRootlessFdroidReleaseAppMetadata
+> Task :app:writeRootlessFdroidReleaseSigningConfigVersions
+
+> Task :app:kspRootlessFdroidReleaseKotlin
+w: [ksp] /workspace/RootlessViPER4Android/app/src/main/java/me/timschneeberger/rootlessjamesdsp/model/room/AppBlocklistDatabase.kt:10: Schema export directory was not provided to the annotation processor so Room cannot export the schema. You can either provide `room.schemaLocation` annotation processor argument by applying the Room Gradle plugin (id 'androidx.room') OR set exportSchema to false.
+
+> Task :app:kaptGenerateStubsRootlessFdroidReleaseKotlin
+w: Support for language version 2.0+ in kapt is in Alpha and must be enabled explicitly. Falling back to 1.9.
+
+> Task :app:kaptRootlessFdroidReleaseKotlin SKIPPED
+> Task :app:compileRootlessFdroidReleaseKotlin
+w: file:///workspace/RootlessViPER4Android/app/src/main/java/me/timschneeberger/rootlessjamesdsp/fragment/EchoPanelFragment.kt:30:81 'static field MODE_MULTI_PROCESS: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/RootlessViPER4Android/app/src/main/java/me/timschneeberger/rootlessjamesdsp/fragment/PreferenceGroupFragment.kt:278:70 'static field MODE_MULTI_PROCESS: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/RootlessViPER4Android/app/src/main/java/me/timschneeberger/rootlessjamesdsp/fragment/ProcessingOrderDialogFragment.kt:87:69 'static field MODE_MULTI_PROCESS: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/RootlessViPER4Android/app/src/main/java/me/timschneeberger/rootlessjamesdsp/fragment/ProcessingOrderDialogFragment.kt:95:67 'static field MODE_MULTI_PROCESS: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/RootlessViPER4Android/app/src/main/java/me/timschneeberger/rootlessjamesdsp/fragment/settings/SettingsFragment.kt:21:41 'static field MODE_MULTI_PROCESS: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/RootlessViPER4Android/app/src/main/java/me/timschneeberger/rootlessjamesdsp/interop/JamesDspBaseEngine.kt:926:70 'static field MODE_MULTI_PROCESS: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/RootlessViPER4Android/app/src/main/java/me/timschneeberger/rootlessjamesdsp/service/QuickTileService.kt:92:21 'fun startActivityAndCollapse(p0: Intent!): Unit' is deprecated. Deprecated in Java.
+w: file:///workspace/RootlessViPER4Android/app/src/main/java/me/timschneeberger/rootlessjamesdsp/utils/CustomThemeStore.kt:33:62 'static field MODE_MULTI_PROCESS: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/RootlessViPER4Android/app/src/main/java/me/timschneeberger/rootlessjamesdsp/utils/FileLibraryLayout.kt:20:74 'static field MODE_MULTI_PROCESS: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/RootlessViPER4Android/app/src/main/java/me/timschneeberger/rootlessjamesdsp/utils/FileLibraryLayout.kt:25:79 'static field MODE_MULTI_PROCESS: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/RootlessViPER4Android/app/src/main/java/me/timschneeberger/rootlessjamesdsp/utils/GithubLibraryDownloader.kt:31:82 'static field MODE_MULTI_PROCESS: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/RootlessViPER4Android/app/src/main/java/me/timschneeberger/rootlessjamesdsp/utils/GithubLibraryDownloader.kt:32:75 'static field MODE_MULTI_PROCESS: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/RootlessViPER4Android/app/src/main/java/me/timschneeberger/rootlessjamesdsp/utils/GithubLibraryDownloader.kt:54:70 'static field MODE_MULTI_PROCESS: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/RootlessViPER4Android/app/src/main/java/me/timschneeberger/rootlessjamesdsp/utils/LiveprogSlots.kt:44:59 'static field MODE_MULTI_PROCESS: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/RootlessViPER4Android/app/src/main/java/me/timschneeberger/rootlessjamesdsp/utils/LiveprogSlots.kt:52:71 'static field MODE_MULTI_PROCESS: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/RootlessViPER4Android/app/src/main/java/me/timschneeberger/rootlessjamesdsp/utils/V4aMode.kt:115:56 'static field MODE_MULTI_PROCESS: Int' is deprecated. Deprecated in Java.
+
+> Task :app:compileRootlessFdroidReleaseJavaWithJavac
+> Task :app:processRootlessFdroidReleaseJavaRes
+> Task :app:bundleRootlessFdroidReleaseClassesToCompileJar
+> Task :app:kspRootlessFdroidReleaseUnitTestKotlin
+
+> Task :app:kaptGenerateStubsRootlessFdroidReleaseUnitTestKotlin
+w: Support for language version 2.0+ in kapt is in Alpha and must be enabled explicitly. Falling back to 1.9.
+
+> Task :app:kaptRootlessFdroidReleaseUnitTestKotlin SKIPPED
+
+> Task :app:compileRootlessFdroidReleaseUnitTestKotlin
+w: file:///workspace/RootlessViPER4Android/app/src/test/java/me/timschneeberger/rootlessjamesdsp/service/FailOpenServiceTest.kt:33:40 Java type mismatch: inferred type is 'kotlin.Any?', but 'kotlin.Any' was expected.
+
+> Task :app:processRootlessFdroidReleaseUnitTestJavaRes
+> Task :app:compileRootlessFdroidReleaseUnitTestJavaWithJavac NO-SOURCE
+> Task :app:transformRootlessFdroidReleaseClassesWithAsm
+> Task :app:bundleRootlessFdroidReleaseClassesToRuntimeJar
+> Task :app:mergeRootlessFdroidReleaseJavaResource
+> Task :app:transformRootlessFdroidReleaseUnitTestClassesWithAsm
+> Task :app:dexBuilderRootlessFdroidRelease
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+> Task :app:testRootlessFdroidReleaseUnitTest
+> Task :app:mergeRootlessFdroidReleaseGlobalSynthetics
+> Task :app:mergeDexRootlessFdroidRelease
+> Task :app:compileRootlessFdroidReleaseArtProfile
+> Task :app:packageRootlessFdroidRelease
+> Task :app:createRootlessFdroidReleaseApkListingFileRedirect
+> Task :app:assembleRootlessFdroidRelease
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.10.2/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 2m 52s
+122 actionable tasks: 119 executed, 3 up-to-date

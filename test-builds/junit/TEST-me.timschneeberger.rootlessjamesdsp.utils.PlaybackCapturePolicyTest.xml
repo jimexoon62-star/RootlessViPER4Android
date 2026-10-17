@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="me.timschneeberger.rootlessjamesdsp.utils.PlaybackCapturePolicyTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-10-17T07:23:10" hostname="f3ec2e2c56f5" time="0.011">
+  <properties/>
+  <testcase name="newNativeRestrictionReleasesExistingMuteAndBlocksLateCallbacks" classname="me.timschneeberger.rootlessjamesdsp.utils.PlaybackCapturePolicyTest" time="0.004"/>
+  <testcase name="nativeRestrictionExistsDespitePublicPlayerFlagsBeingZero" classname="me.timschneeberger.rootlessjamesdsp.utils.PlaybackCapturePolicyTest" time="0.003"/>
+  <testcase name="changedSessionOwnerDoesNotInheritAnotherAppsRestriction" classname="me.timschneeberger.rootlessjamesdsp.utils.PlaybackCapturePolicyTest" time="0.001"/>
+  <testcase name="bothNativeCaptureRestrictionsAreRecognized" classname="me.timschneeberger.rootlessjamesdsp.utils.PlaybackCapturePolicyTest" time="0.0"/>
+  <testcase name="legitimatelyChangedNativePolicyAllowsNewSessionAgain" classname="me.timschneeberger.rootlessjamesdsp.utils.PlaybackCapturePolicyTest" time="0.001"/>
+  <testcase name="malformedFlagsCannotBleedIntoNextClient" classname="me.timschneeberger.rootlessjamesdsp.utils.PlaybackCapturePolicyTest" time="0.0"/>
+  <testcase name="duplicateActiveRowsCannotEraseRestriction" classname="me.timschneeberger.rootlessjamesdsp.utils.PlaybackCapturePolicyTest" time="0.0"/>
+  <testcase name="restrictedSessionCannotCreateMuteEvenWithPublicDiscoveryAndResume" classname="me.timschneeberger.rootlessjamesdsp.utils.PlaybackCapturePolicyTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

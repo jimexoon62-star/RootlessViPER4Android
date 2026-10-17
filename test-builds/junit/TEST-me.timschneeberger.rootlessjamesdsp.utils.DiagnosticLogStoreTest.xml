@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="me.timschneeberger.rootlessjamesdsp.utils.DiagnosticLogStoreTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-17T07:23:09" hostname="f3ec2e2c56f5" time="0.073">
+  <properties/>
+  <testcase name="freshLogExportContainsPipelineMeasurement" classname="me.timschneeberger.rootlessjamesdsp.utils.DiagnosticLogStoreTest" time="0.042"/>
+  <testcase name="concurrentWritesAreComplete" classname="me.timschneeberger.rootlessjamesdsp.utils.DiagnosticLogStoreTest" time="0.026"/>
+  <testcase name="rotationRetainsLatestFailure" classname="me.timschneeberger.rootlessjamesdsp.utils.DiagnosticLogStoreTest" time="0.004"/>
+  <testcase name="survivesReopening" classname="me.timschneeberger.rootlessjamesdsp.utils.DiagnosticLogStoreTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

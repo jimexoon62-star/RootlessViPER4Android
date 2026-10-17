@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="me.timschneeberger.rootlessjamesdsp.utils.OutputIntegrityTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-17T07:23:09" hostname="f3ec2e2c56f5" time="0.039">
+  <properties/>
+  <testcase name="successfulIoWithDeadDspIsDetected" classname="me.timschneeberger.rootlessjamesdsp.utils.OutputIntegrityTest" time="0.002"/>
+  <testcase name="normalStereoAndTemporaryZerosRemainValid" classname="me.timschneeberger.rootlessjamesdsp.utils.OutputIntegrityTest" time="0.018"/>
+  <testcase name="nonFiniteOutputFailsBeforeWrite" classname="me.timschneeberger.rootlessjamesdsp.utils.OutputIntegrityTest" time="0.001"/>
+  <testcase name="pausedAndSilentContentNeverFails" classname="me.timschneeberger.rootlessjamesdsp.utils.OutputIntegrityTest" time="0.017"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
