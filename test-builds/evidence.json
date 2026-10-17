@@ -10,5 +10,10 @@
   "bytes": 33616438,
   "package": "com.alienware377.viper4android.rootless",
   "physical_device_testing": "not executed",
-  "spotify_processing": "not demonstrated; native restriction identified"
+  "spotify_processing": "not demonstrated; native restriction identified",
+  "emulator_ci": "https://github.com/jimexoon62-star/RootlessViPER4Android/actions/runs/39013314754",
+  "emulator_result": "success",
+  "emulator_abi": "x86_64",
+  "emulator_native_tests": 5,
+  "emulator_spotify_projection_test": "not executed"
 }
