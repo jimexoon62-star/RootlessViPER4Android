@@ -1,4 +1,8 @@
 <resources>
+    <string name="key_full_shell_engine" translatable="false">full_shell_engine</string>
+    <bool name="default_full_shell_engine">true</bool>
+    <string name="full_shell_engine_title">Full ViPER engine via Shizuku</string>
+    <string name="full_shell_engine_summary">All native effects and saved profiles. Requires user-authorized Shizuku in ADB mode. Selected media audio is routed to ViPER; routing is released if replacement playback fails. Disabling returns to the selected legacy backend. Changing this stops processing.</string>
     <string name="key_direct_session_compatibility" translatable="false">direct_session_compatibility</string>
     <bool name="default_direct_session_compatibility">true</bool>
     <string name="direct_compatibility_title">Direct session compatibility (EQ and gain only)</string>

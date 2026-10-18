@@ -242,7 +242,11 @@
             android:label=""
             android:theme="@style/Theme.Transparent" />
 
+        <activity android:name=".activity.ShellAuthorizationActivity" android:exported="false" />
+
         <!-- Services -->
+        <service android:name=".service.ShellAudioProcessorService"
+            android:exported="false" android:foregroundServiceType="mediaPlayback" />
         <service android:name=".service.DirectAudioProcessorService"
             android:exported="false" android:foregroundServiceType="mediaPlayback" />
         <service

@@ -40,3 +40,7 @@
 -keepclasseswithmembernames class * {
     public <init>(android.content.Context, android.util.AttributeSet, int);
 }
+
+# Executed by user-authorized shell through app_process.
+-keep class me.timschneeberger.rootlessjamesdsp.audio.ShellRoutingWorker { *; }
+-keep class me.timschneeberger.rootlessjamesdsp.audio.ShellRoutingWorker$* { *; }

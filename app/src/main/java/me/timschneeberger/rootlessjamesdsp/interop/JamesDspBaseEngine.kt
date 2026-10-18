@@ -1,4 +1,4 @@
-﻿package me.timschneeberger.rootlessjamesdsp.interop
+package me.timschneeberger.rootlessjamesdsp.interop
 
 import android.content.Context
 import android.content.Intent
@@ -47,6 +47,11 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
         }
     }
 
+    /** For a pipeline that serializes configuration, processing and disposal on one worker. */
+    fun syncWithPreferencesBlocking(strict: Boolean = false) {
+        kotlinx.coroutines.runBlocking { syncWithPreferencesAsync(null, strict) }
+    }
+
     fun clearCache() {
         cache.clear()
     }
@@ -57,7 +62,7 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
         })
     }
 
-    private suspend fun syncWithPreferencesAsync(forceUpdateNamespaces: Array<String>? = null) {
+    private suspend fun syncWithPreferencesAsync(forceUpdateNamespaces: Array<String>? = null, strict: Boolean = false) {
         Timber.d("Synchronizing with preferences... (forced: %s)", forceUpdateNamespaces?.joinToString(";") { it })
 
         syncMutex.withLock {
@@ -540,6 +545,7 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
 
                 if(!result) {
                     Timber.e("Failed to apply $it")
+                    if (strict) throw IllegalStateException("Native DSP configuration rejected: $it")
                 }
             }
 

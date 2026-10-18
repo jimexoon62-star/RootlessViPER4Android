@@ -32,6 +32,11 @@ class EngineLauncherActivity : BaseActivity() {
             return
         }
 
+        if (me.timschneeberger.rootlessjamesdsp.service.ShellAudioProcessorService.requested(this)) {
+            startActivity(Intent(this, ShellAuthorizationActivity::class.java))
+            finish()
+            return
+        }
         if (me.timschneeberger.rootlessjamesdsp.service.DirectAudioProcessorService.enabled(this)) {
             RootlessAudioProcessorService.start(this, null)
             finish()

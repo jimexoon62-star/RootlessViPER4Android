@@ -113,7 +113,8 @@ class MainActivity : BaseActivity() {
                 processorService = (service as BaseAudioProcessorService.LocalBinder).service
                 processorServiceBound = true
                 ((processorService as? RootlessAudioProcessorService)?.currentCaptureStatus
-                    ?: (processorService as? me.timschneeberger.rootlessjamesdsp.service.DirectAudioProcessorService)?.currentCaptureStatus)?.let {
+                    ?: (processorService as? me.timschneeberger.rootlessjamesdsp.service.DirectAudioProcessorService)?.currentCaptureStatus
+                    ?: (processorService as? me.timschneeberger.rootlessjamesdsp.service.ShellAudioProcessorService)?.currentCaptureStatus)?.let {
                     binding.toolbar.subtitle = getString(ServiceNotificationHelper.captureStatusText(it))
                 }
 
@@ -363,7 +364,7 @@ class MainActivity : BaseActivity() {
             showLibraryLoadError()
 
         // Rootless: Check permissions and launch onboarding if required
-        if(SdkCheck.isQ && isRootless() && (!hasDumpPermission() || (!me.timschneeberger.rootlessjamesdsp.service.DirectAudioProcessorService.enabled(this) && !hasRecordPermission()))) {
+        if(SdkCheck.isQ && isRootless() && (!hasDumpPermission() || (!me.timschneeberger.rootlessjamesdsp.service.ShellAudioProcessorService.requested(this) && !me.timschneeberger.rootlessjamesdsp.service.DirectAudioProcessorService.enabled(this) && !hasRecordPermission()))) {
             Timber.i("Launching onboarding (first boot: $firstBoot)")
 
             startActivity(Intent(this, OnboardingActivity::class.java).apply {
@@ -618,7 +619,7 @@ class MainActivity : BaseActivity() {
 
     private fun showAndroid15Alert() {
         // Session insert effects do not use projection and need no permanent projection app-op.
-        if (me.timschneeberger.rootlessjamesdsp.service.DirectAudioProcessorService.enabled(this)) return
+        if (me.timschneeberger.rootlessjamesdsp.service.ShellAudioProcessorService.requested(this) || me.timschneeberger.rootlessjamesdsp.service.DirectAudioProcessorService.enabled(this)) return
         if(!isRootless() || !SdkCheck.isVanillaIceCream)
             return
 
@@ -785,6 +786,10 @@ class MainActivity : BaseActivity() {
 
     @RequiresApi(Build.VERSION_CODES.Q)
     fun requestCapturePermission() {
+        if (me.timschneeberger.rootlessjamesdsp.service.ShellAudioProcessorService.requested(this)) {
+            startActivity(Intent(this, ShellAuthorizationActivity::class.java))
+            return
+        }
         if (me.timschneeberger.rootlessjamesdsp.service.DirectAudioProcessorService.enabled(this)) {
             RootlessAudioProcessorService.start(this, null)
             return

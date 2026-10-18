@@ -48,7 +48,7 @@ class DirectCrossAppTest {
         try {
             main {
                 RootlessAudioProcessorService.stop(context)
-                app.edit().putBoolean(DirectAudioProcessorService.MODE_KEY,true)
+                app.edit().putBoolean(me.timschneeberger.rootlessjamesdsp.service.ShellAudioProcessorService.MODE_KEY,false).putBoolean(DirectAudioProcessorService.MODE_KEY,true)
                     .putString(context.getString(R.string.key_session_detection_method),method).commit()
                 output.edit().putFloat(context.getString(R.string.key_output_postgain),0f).commit()
                 eq.edit().putBoolean(context.getString(R.string.key_eq_enable),false).commit()

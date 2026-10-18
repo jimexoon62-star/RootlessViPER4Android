@@ -46,7 +46,7 @@ class DirectAudioProcessorService : BaseAudioProcessorService() {
     private var blocked = emptySet<Int>()
     private val blockedObserver = Observer<List<BlockedApp>?> { list -> blocked = list.orEmpty().map { it.uid }.toSet(); reconcile() }
     private val prefsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-        if (key == MODE_KEY && !enabled(this)) requestStop() else reconcile()
+        if (key == ShellAudioProcessorService.MODE_KEY || (key == MODE_KEY && !enabled(this))) requestStop() else reconcile()
     }
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -135,8 +135,8 @@ class DirectAudioProcessorService : BaseAudioProcessorService() {
     }
     companion object {
         const val MODE_KEY = "direct_session_compatibility"
-        fun enabled(context: Context) = context.getSharedPreferences(Constants.PREF_APP, Context.MODE_PRIVATE).getBoolean(MODE_KEY, true)
+        fun enabled(context: Context) = !ShellAudioProcessorService.requested(context) && context.getSharedPreferences(Constants.PREF_APP, Context.MODE_PRIVATE).getBoolean(MODE_KEY, true)
         fun selectedService(context: Context): Class<out BaseAudioProcessorService> =
-            if (enabled(context)) DirectAudioProcessorService::class.java else RootlessAudioProcessorService::class.java
+            if (ShellAudioProcessorService.requested(context)) ShellAudioProcessorService::class.java else if (enabled(context)) DirectAudioProcessorService::class.java else RootlessAudioProcessorService::class.java
     }
 }

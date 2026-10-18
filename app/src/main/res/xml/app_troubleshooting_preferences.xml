@@ -2,6 +2,11 @@
     xmlns:android="http://schemas.android.com/apk/res/android">
 
     <PreferenceCategory app:title="@string/direct_compatibility_title" app:iconSpaceReserved="false">
+        <SwitchPreferenceCompat
+            app:key="@string/key_full_shell_engine"
+            app:title="@string/full_shell_engine_title"
+            app:summary="@string/full_shell_engine_summary"
+            app:defaultValue="@bool/default_full_shell_engine" />
         <me.timschneeberger.rootlessjamesdsp.preference.MaterialSwitchPreference
             app:key="@string/key_direct_session_compatibility"
             app:title="@string/direct_compatibility_title"

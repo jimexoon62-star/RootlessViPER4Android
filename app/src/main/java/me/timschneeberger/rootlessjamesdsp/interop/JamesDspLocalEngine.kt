@@ -28,6 +28,14 @@ class JamesDspLocalEngine(context: Context, callbacks: JamesDspWrapper.JamesDspC
             BenchmarkManager.loadBenchmarksFromCache()
     }
 
+    /** Caller must own the processing worker and have no outstanding native calls. */
+    fun closeAfterProcessing() {
+        super.close()
+        val oldHandle = handle
+        handle = 0
+        if (oldHandle != 0L) JamesDspWrapper.free(oldHandle)
+    }
+
     override fun close() {
         val oldHandle = handle
         handle = 0

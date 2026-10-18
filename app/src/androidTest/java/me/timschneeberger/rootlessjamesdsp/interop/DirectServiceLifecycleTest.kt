@@ -29,7 +29,7 @@ class DirectServiceLifecycleTest {
             assertEquals(expected,count())
         }
         try {
-            onMain { prefs.edit().putBoolean("v4a_classic_layout",true).putBoolean(DirectAudioProcessorService.MODE_KEY,true).commit() }
+            onMain { prefs.edit().putBoolean("v4a_classic_layout",true).putBoolean(me.timschneeberger.rootlessjamesdsp.service.ShellAudioProcessorService.MODE_KEY,false).putBoolean(DirectAudioProcessorService.MODE_KEY,true).commit() }
             val activity=instrumentation.startActivitySync(Intent(context,MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) as MainActivity
             SystemClock.sleep(1000)
             onMain {
@@ -48,7 +48,7 @@ class DirectServiceLifecycleTest {
                 activity.supportFragmentManager.fragments.forEach(::inspect)
                 assertTrue("no unsupported cards inspected",unsupported>0); assertTrue("no power control inspected",power>0)
             }
-            onMain { RootlessAudioProcessorService.stop(context); prefs.edit().putBoolean(DirectAudioProcessorService.MODE_KEY,true).commit() }
+            onMain { RootlessAudioProcessorService.stop(context); prefs.edit().putBoolean(me.timschneeberger.rootlessjamesdsp.service.ShellAudioProcessorService.MODE_KEY,false).putBoolean(DirectAudioProcessorService.MODE_KEY,true).commit() }
             awaitCount(0)
             repeat(5) {
                 onMain { RootlessAudioProcessorService.start(context,null) }; awaitCount(1)

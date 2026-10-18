@@ -342,7 +342,7 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
             ACTION_START -> {
                 // A queued start can outlive the backend selection which created it.
                 // No projection/capture or muting may start for a retired selection.
-                if (DirectAudioProcessorService.enabled(this) || BaseAudioProcessorService.activeServices > 1) {
+                if (ShellAudioProcessorService.requested(this) || DirectAudioProcessorService.enabled(this) || BaseAudioProcessorService.activeServices > 1) {
                     failOpen("Queued capture start no longer owns the selected backend", false)
                     return START_NOT_STICKY
                 }
@@ -552,7 +552,7 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
     }
 
     private fun loadFromPreferences(key: String?){
-        if (key == DirectAudioProcessorService.MODE_KEY && DirectAudioProcessorService.enabled(this)) {
+        if (key == ShellAudioProcessorService.MODE_KEY || (key == DirectAudioProcessorService.MODE_KEY && DirectAudioProcessorService.enabled(this))) {
             failOpen("Backend changed to direct compatibility", false)
             return
         }
@@ -1033,10 +1033,11 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
         fun stop(context: Context) {
             try {
                 BaseAudioProcessorService.liveInstances().filter {
-                    it is RootlessAudioProcessorService || it is DirectAudioProcessorService
+                    it is RootlessAudioProcessorService || it is DirectAudioProcessorService || it is ShellAudioProcessorService
                 }.forEach { it.requestStop() }
                 context.stopService(Intent(context, RootlessAudioProcessorService::class.java))
                 context.stopService(Intent(context, DirectAudioProcessorService::class.java))
+                context.stopService(Intent(context, ShellAudioProcessorService::class.java))
             }
             catch(ex: Exception) {
                 CrashlyticsImpl.recordException(ex)
