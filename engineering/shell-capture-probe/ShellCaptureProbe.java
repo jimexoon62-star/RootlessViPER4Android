@@ -1,4 +1,6 @@
 import android.content.Context;
+import android.content.ContextWrapper;
+import android.content.AttributionSource;
 import android.media.*;
 import android.os.*;
 import java.lang.reflect.*;
@@ -17,7 +19,16 @@ public final class ShellCaptureProbe {
         Class<?> at = Class.forName("android.app.ActivityThread");
         Object thread = at.getMethod("systemMain").invoke(null);
         Context system = (Context) at.getMethod("getSystemContext").invoke(thread);
-        Context context = system.createPackageContext("com.android.shell", 0);
+        Context shellPackage = system.createPackageContext("com.android.shell", 0);
+        Context context = new ContextWrapper(shellPackage) {
+            @Override public String getOpPackageName() { return "com.android.shell"; }
+            @Override public AttributionSource getAttributionSource() {
+                return new AttributionSource.Builder(android.os.Process.myUid())
+                    .setPackageName("com.android.shell").build();
+            }
+        };
+        System.out.println("attribution uid=" + context.getAttributionSource().getUid()
+            + " package=" + context.getAttributionSource().getPackageName());
         for (String p : new String[]{"CAPTURE_AUDIO_OUTPUT", "CAPTURE_MEDIA_OUTPUT", "MODIFY_AUDIO_ROUTING", "RECORD_AUDIO"})
             System.out.println("permission " + p + "=" + context.checkSelfPermission("android.permission." + p));
         Class<?> rb = Class.forName("android.media.audiopolicy.AudioMixingRule$Builder");
