@@ -20,6 +20,12 @@ jobs:
           packages: platform-tools
       - name: Verify frozen binaries
         run: cd test-fixtures/cross-app && sha256sum -c SHA256SUMS
+      - name: Download and verify official players
+        run: |
+          curl -fL --max-time 60 'https://download.videolan.org/pub/videolan/vlc-android/3.6.3/VLC-Android-3.6.3-x86_64.apk' -o /tmp/vlc.apk
+          curl -fL --max-time 60 'https://github.com/mpv-android/mpv-android/releases/download/2026-09-17/app-default-x86_64-release.apk' -o /tmp/mpv.apk
+          echo 'd7205680de42c81f256b60b42c4ecdd0647e1200043ec2cccd6e274802467a0d  /tmp/vlc.apk' | sha256sum -c -
+          echo '347cef5d0c2fe76ec95e19685597ad5d208e5309cc0642d51ae656b125ce1d07  /tmp/mpv.apk' | sha256sum -c -
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
