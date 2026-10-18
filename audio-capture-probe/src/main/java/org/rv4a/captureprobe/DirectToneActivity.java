@@ -11,11 +11,23 @@ public class DirectToneActivity extends Activity {
     private final AtomicBoolean stopped = new AtomicBoolean();
     private Thread writer;
     private AudioTrack track;
+    private boolean nativeTone;
+    private final Handler handler=new Handler(Looper.getMainLooper());
+    private static native int startNative(int frequency);
+    private static native void stopNative();
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state);
         TextView label = new TextView(this);
         label.setText("Synthetic opted-out tone; automatically stops after 90 seconds.");
         setContentView(label);
+        if(getIntent().getBooleanExtra("aaudio",false)) {
+            System.loadLibrary("direct_tone");
+            int result=startNative(getIntent().getIntExtra("frequency",997));
+            if(result!=0) throw new IllegalStateException("AAudio source start failed: "+result);
+            nativeTone=true;
+            handler.postDelayed(this::finish,90000);
+            return;
+        }
         track = new AudioTrack.Builder().setAudioAttributes(new AudioAttributes.Builder()
             .setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
             .setAllowedCapturePolicy(AudioAttributes.ALLOW_CAPTURE_BY_SYSTEM).build())
@@ -50,6 +62,8 @@ public class DirectToneActivity extends Activity {
     }
     @Override protected void onDestroy() {
         stopped.set(true);
+        handler.removeCallbacksAndMessages(null);
+        if(nativeTone) { stopNative(); nativeTone=false; }
         if(writer!=null) { writer.interrupt(); try { writer.join(1000); } catch(InterruptedException e) { Thread.currentThread().interrupt(); } }
         super.onDestroy();
     }
