@@ -57,6 +57,31 @@ class DirectCrossAppTest {
                 val launch=shell("am start -W -n org.rv4a.captureprobe/.DirectToneActivity")
                 assertFalse(launch,launch.contains("Error"))
             } else {
+                if(player=="org.videolan.vlc") {
+                    // VLC 3.6.3 gates even a granted content URI on its normal
+                    // first-run storage approval. Use the real Settings UI,
+                    // in this synthetic-only emulator; no app-op bypass.
+                    shell("am start -W -a android.settings.MANAGE_APP_ALL_FILES_ACCESS_PERMISSION -d package:org.videolan.vlc")
+                    fun findSwitch(node:android.view.accessibility.AccessibilityNodeInfo?):android.view.accessibility.AccessibilityNodeInfo? {
+                        if(node==null) return null
+                        if(node.isCheckable && node.isEnabled) return node
+                        for(i in 0 until node.childCount) findSwitch(node.getChild(i))?.let { return it }
+                        return null
+                    }
+                    val deadline=SystemClock.elapsedRealtime()+5000
+                    var toggle=findSwitch(instrumentation.uiAutomation.rootInActiveWindow)
+                    while(toggle==null && SystemClock.elapsedRealtime()<deadline) {
+                        SystemClock.sleep(100); toggle=findSwitch(instrumentation.uiAutomation.rootInActiveWindow)
+                    }
+                    assertNotNull("VLC storage approval UI not available",toggle)
+                    if(!toggle!!.isChecked) {
+                        var clickable=toggle!!
+                        while(!clickable.isClickable && clickable.parent!=null) clickable=clickable.parent
+                        assertTrue("VLC storage approval click failed",clickable.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK))
+                    }
+                    SystemClock.sleep(300)
+                    assertTrue("VLC storage approval was not granted",shell("appops get org.videolan.vlc MANAGE_EXTERNAL_STORAGE").contains("allow"))
+                }
                 val file=java.io.File(context.filesDir,"synthetic-cross-app.wav"); toneFile=file
                 val frames=48000*60
                 fun bytes(size:Int)=java.nio.ByteBuffer.allocate(size).order(java.nio.ByteOrder.LITTLE_ENDIAN)
