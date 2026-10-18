@@ -195,8 +195,21 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
                         startRecording()
                     }
                 }, 500L)
-            } else stopSelf()
+            } else {
+                sendLocalBroadcast(Intent(Constants.ACTION_SERVICE_STOPPED))
+                stopSelf()
+            }
         }
+    }
+
+    override fun requestStop() {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            mainHandler.post { requestStop() }
+            return
+        }
+        failOpen("Explicit processing stop", false)
+        sendLocalBroadcast(Intent(Constants.ACTION_SERVICE_STOPPED))
+        stopSelf()
     }
 
     private val watchdog = object : Runnable {
@@ -336,11 +349,7 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
             }
             ACTION_STOP -> {
                 Timber.d("Stopping service")
-                synchronized(safetyLock) {
-                    isProcessorDisposing = true
-                    sessionManager.sessionDatabase.suspendMuting()
-                }
-                stopSelf()
+                requestStop()
                 return START_NOT_STICKY
             }
         }
@@ -1021,6 +1030,9 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
 
         fun stop(context: Context) {
             try {
+                BaseAudioProcessorService.liveInstances().filter {
+                    it is RootlessAudioProcessorService || it is DirectAudioProcessorService
+                }.forEach { it.requestStop() }
                 context.stopService(Intent(context, RootlessAudioProcessorService::class.java))
                 context.stopService(Intent(context, DirectAudioProcessorService::class.java))
             }

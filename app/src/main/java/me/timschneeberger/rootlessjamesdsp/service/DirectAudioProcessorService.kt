@@ -23,7 +23,9 @@ import timber.log.Timber
 /** Exclusive compatibility backend: public Android EQ/gain on original sessions.
  * No projection, recorder, replacement track, muter or native ViPER engine. */
 class DirectAudioProcessorService : BaseAudioProcessorService() {
-    private var disposing = false
+    @Volatile private var disposing = false
+    private var cleanupDone = false
+    val hasStoppedProcessing get() = disposing
     private var initialized = false
     private val scope = CoroutineScope(SupervisorJob())
     private val handler = android.os.Handler(android.os.Looper.getMainLooper())
@@ -44,12 +46,12 @@ class DirectAudioProcessorService : BaseAudioProcessorService() {
     private var blocked = emptySet<Int>()
     private val blockedObserver = Observer<List<BlockedApp>?> { list -> blocked = list.orEmpty().map { it.uid }.toSet(); reconcile() }
     private val prefsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-        if (key == MODE_KEY && !enabled(this)) stopSelf() else reconcile()
+        if (key == MODE_KEY && !enabled(this)) requestStop() else reconcile()
     }
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (!disposing) try { registry.update(settings()); publishStatus() }
-            catch (e: Exception) { Timber.e(e, "DIRECT_COMPAT invalid settings; disabling effects"); stopSelf() }
+            catch (e: Exception) { Timber.e(e, "DIRECT_COMPAT invalid settings; disabling effects"); requestStop() }
         }
     }
     var currentCaptureStatus = CaptureStatus.CHECKING
@@ -57,7 +59,7 @@ class DirectAudioProcessorService : BaseAudioProcessorService() {
     override fun onCreate() {
         super.onCreate()
         startForeground(Notifications.ID_SERVICE_STATUS, ServiceNotificationHelper.createServiceNotification(this, arrayOf()), ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
-        if (activeServices > 1 || !enabled(this)) { stopSelf(); return }
+        if (activeServices > 1 || !enabled(this)) { requestStop(); return }
         initialized = true
         appPrefs.registerOnSharedPreferenceChangeListener(prefsListener)
         registerLocalReceiver(receiver, IntentFilter(Constants.ACTION_PREFERENCES_UPDATED))
@@ -73,7 +75,7 @@ class DirectAudioProcessorService : BaseAudioProcessorService() {
         handler.postDelayed(health, 1000)
     }
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == RootlessAudioProcessorService.ACTION_STOP) stopSelf()
+        if (intent?.action == RootlessAudioProcessorService.ACTION_STOP) requestStop()
         return START_NOT_STICKY
     }
     private fun settings() = DirectEffectSettings.parse(
@@ -90,7 +92,7 @@ class DirectAudioProcessorService : BaseAudioProcessorService() {
             }?.mapValues { it.value.uid }.orEmpty()
             registry.reconcile(accepted, settings())
             publishStatus()
-        } catch (e: Exception) { Timber.e(e, "DIRECT_COMPAT failed; releasing direct effects"); stopSelf() }
+        } catch (e: Exception) { Timber.e(e, "DIRECT_COMPAT failed; releasing direct effects"); requestStop() }
     }
     private fun publishStatus() {
         if (disposing || !initialized) return
@@ -101,9 +103,17 @@ class DirectAudioProcessorService : BaseAudioProcessorService() {
         ServiceNotificationHelper.pushCaptureStatus(this, currentCaptureStatus)
         sendLocalBroadcast(Intent(CaptureStatus.ACTION_CHANGED).putExtra("status", currentCaptureStatus.name))
     }
-    override fun onDestroy() {
+    override fun requestStop() {
+        // A bound service can survive stopSelf; release effects before relying on destruction.
         disposing = true
         registry.close()
+        if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) finishCleanup()
+        else handler.post { finishCleanup() }
+        stopSelf()
+    }
+    private fun finishCleanup() {
+        if (cleanupDone) return
+        cleanupDone = true
         if (initialized) {
             fun cleanup(name: String, action: () -> Unit) {
                 try { action() } catch (e: Exception) { Timber.e(e, "DIRECT_COMPAT cleanup failed: %s", name) }
@@ -116,6 +126,11 @@ class DirectAudioProcessorService : BaseAudioProcessorService() {
         }
         handler.removeCallbacksAndMessages(null)
         scope.cancel()
+    }
+    override fun onDestroy() {
+        disposing = true
+        registry.close()
+        finishCleanup()
         super.onDestroy()
     }
     companion object {

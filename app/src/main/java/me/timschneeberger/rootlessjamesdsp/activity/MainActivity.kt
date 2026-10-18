@@ -138,6 +138,7 @@ class MainActivity : BaseActivity() {
                         .getOrNull()?.let { binding.toolbar.subtitle = getString(ServiceNotificationHelper.captureStatusText(it)) }
                 }
                 Constants.ACTION_SERVICE_STOPPED -> {
+                    if (isRootless()) unbindProcessorService()
                     if (isRootless()) binding.toolbar.subtitle = null
                     if(isRootless())
                         binding.powerToggle.isToggled = false
@@ -774,6 +775,9 @@ class MainActivity : BaseActivity() {
         catch (ex: IllegalArgumentException) {
             Timber.d("Failed to unbind service connection. Not registered?")
             Timber.i(ex)
+        } finally {
+            processorService = null
+            processorServiceBound = false
         }
     }
 

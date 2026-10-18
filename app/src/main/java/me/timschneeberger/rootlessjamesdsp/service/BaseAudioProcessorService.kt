@@ -18,16 +18,24 @@ abstract class BaseAudioProcessorService : Service() {
     }
 
     override fun onCreate() {
+        instances[javaClass] = this
         activeServices++
         super.onCreate()
     }
 
     override fun onDestroy() {
+        instances.remove(javaClass, this)
         activeServices--
         super.onDestroy()
     }
 
+    /** Stop processing even when a UI still holds the service binder. */
+    open fun requestStop() { stopSelf() }
+
     companion object {
+        private val instances = java.util.concurrent.ConcurrentHashMap<Class<*>, BaseAudioProcessorService>()
+        fun liveInstances(): List<BaseAudioProcessorService> = instances.values.toList()
+
         var activeServices: Int = 0
             private set
     }

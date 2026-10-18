@@ -56,6 +56,24 @@ class DirectServiceLifecycleTest {
                 onMain { RootlessAudioProcessorService.stop(context) }; awaitCount(0)
             }
             onMain { RootlessAudioProcessorService.start(context,null) }; awaitCount(1)
+            val bound=java.util.concurrent.CountDownLatch(1)
+            var held: DirectAudioProcessorService?=null
+            val connection=object : android.content.ServiceConnection {
+                override fun onServiceConnected(name:android.content.ComponentName,binder:android.os.IBinder) {
+                    held=(binder as BaseAudioProcessorService.LocalBinder).service as DirectAudioProcessorService
+                    bound.countDown()
+                }
+                override fun onServiceDisconnected(name:android.content.ComponentName) {}
+            }
+            onMain { assertTrue(context.bindService(Intent(context,DirectAudioProcessorService::class.java),connection,0)) }
+            assertTrue(bound.await(5,java.util.concurrent.TimeUnit.SECONDS))
+            try {
+                onMain { RootlessAudioProcessorService.stop(context) }
+                onMain { assertTrue("bound service retained processing",held!!.hasStoppedProcessing) }
+                assertEquals("test must retain a real service binder",1,count())
+            } finally { onMain { context.unbindService(connection) } }
+            awaitCount(0)
+            onMain { RootlessAudioProcessorService.start(context,null) }; awaitCount(1)
             onMain { prefs.edit().putBoolean(DirectAudioProcessorService.MODE_KEY,false).commit() }
             awaitCount(0)
         } finally {
