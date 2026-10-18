@@ -70,4 +70,18 @@ class DirectEffectRegistryTest {
         val r=DirectEffectRegistry<Int>({ _,_,_ -> error("must not attach") }, {})
         r.reconcile(mapOf(0 to 100),0); assertEquals(0,r.controlledCount())
     }
+    @Test fun synchronousLossReleaseFailureIsExplicit() {
+        val messages=mutableListOf<String>(); val f=Fake().also {it.releaseFails=true}
+        val r=DirectEffectRegistry<Int>({ _,_,lost -> lost(); f }, {messages+=it})
+        r.reconcile(mapOf(1 to 100),0)
+        assertEquals(1,f.closed); assertTrue(messages.any {it.contains("CRITICAL release unconfirmed")})
+    }
+    @Test fun constructorCleanupFailureIsExplicit() {
+        val messages=mutableListOf<String>()
+        val r=DirectEffectRegistry<Int>({ _,_,_ ->
+            throw IllegalStateException("constructor").also {it.addSuppressed(IllegalStateException("release unconfirmed"))}
+        }, {messages+=it})
+        r.reconcile(mapOf(1 to 100),0)
+        assertTrue(messages.any {it.contains("CRITICAL constructor cleanup unconfirmed")})
+    }
 }

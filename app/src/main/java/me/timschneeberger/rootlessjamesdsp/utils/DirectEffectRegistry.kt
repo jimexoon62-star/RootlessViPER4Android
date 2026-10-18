@@ -17,9 +17,13 @@ class DirectEffectRegistry<C>(private val factory: (Int, C, () -> Unit) -> Effec
             entries[sid] = entry
             try {
                 val effect = factory(sid, config) { fail(sid, entry) }
-                if (closed || entry.failed || entries[sid] !== entry) effect.close()
+                if (closed || entry.failed || entries[sid] !== entry) release(effect)
                 else entry.effect = effect
-            } catch (e: Exception) { fail(sid, entry); report("attach failed: ${e.javaClass.simpleName}") }
+            } catch (e: Exception) {
+                fail(sid, entry)
+                if (e.suppressed.isNotEmpty()) report("CRITICAL constructor cleanup unconfirmed: ${e.suppressed.first().javaClass.simpleName}")
+                report("attach failed: ${e.javaClass.simpleName}")
+            }
         }
     }
     @Synchronized fun update(config: C) {
@@ -33,8 +37,11 @@ class DirectEffectRegistry<C>(private val factory: (Int, C, () -> Unit) -> Effec
         if (entries[sid] !== entry || entry.failed) return
         entry.failed = true
         val effect = entry.effect; entry.effect = null
-        try { effect?.close() } catch (e: Exception) { report("CRITICAL release unconfirmed: ${e.javaClass.simpleName}") }
+        effect?.let(::release)
         report("Direct effect retired; original playback remains available")
+    }
+    private fun release(effect: Effect<C>) {
+        try { effect.close() } catch (e: Exception) { report("CRITICAL release unconfirmed: ${e.javaClass.simpleName}") }
     }
     private fun retire(sid: Int) {
         val entry = entries[sid] ?: return
