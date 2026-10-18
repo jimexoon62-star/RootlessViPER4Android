@@ -62,7 +62,9 @@ class ShellAudioProcessorService : BaseAudioProcessorService() {
         var underruns = 0
         var underrunAt = headAt
         var starvationWindows = 0
+        var routeId = 0
     }
+    private val binderDead = rikka.shizuku.Shizuku.OnBinderDeadListener { handler.post { if (!disposing) { publish(CaptureStatus.DIRECT); requestStop() } } }
     private val blockedObserver = Observer<List<BlockedApp>?> { blocked = it.orEmpty().map { app -> app.uid }.toSet(); reconcile() }
     private val prefsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
         if (key == MODE_KEY || key == DirectAudioProcessorService.MODE_KEY) requestStop() else reconcile()
@@ -78,7 +80,23 @@ class ShellAudioProcessorService : BaseAudioProcessorService() {
         override fun onAudioDevicesRemoved(devices: Array<out AudioDeviceInfo>) = changed(devices)
         private fun changed(devices: Array<out AudioDeviceInfo>) {
             if (devices.any { it.isSink && it.type != AudioDeviceInfo.TYPE_REMOTE_SUBMIX }) {
+                retire(generation) // Flush the old route immediately; only re-creation is debounced.
+                failures = 0
                 handler.removeCallbacks(routeRestart); handler.postDelayed(routeRestart, 500)
+            }
+        }
+    }
+    private val trackRouteListener = AudioRouting.OnRoutingChangedListener { routing ->
+        val g = generation
+        if (g != null && !g.closed.get() && routing === g.track) {
+            val device = routing.routedDevice
+            if (device != null && device.isSink && device.type != AudioDeviceInfo.TYPE_REMOTE_SUBMIX) {
+                val previous = g.routeId
+                g.routeId = device.id
+                if (previous != 0 && previous != device.id) {
+                    retire(g); failures = 0
+                    handler.removeCallbacks(routeRestart); handler.postDelayed(routeRestart, 500)
+                }
             }
         }
     }
@@ -121,6 +139,7 @@ class ShellAudioProcessorService : BaseAudioProcessorService() {
             publish(CaptureStatus.DIRECT); requestStop(); return
         }
         initialized = true
+        rikka.shizuku.Shizuku.addBinderDeadListener(binderDead)
         prefs.registerOnSharedPreferenceChangeListener(prefsListener)
         val filter = IntentFilter(Constants.ACTION_PREFERENCES_UPDATED).apply {
             addAction(Constants.ACTION_SAMPLE_RATE_UPDATED); addAction(Constants.ACTION_SERVICE_RELOAD_LIVEPROG)
@@ -129,6 +148,9 @@ class ShellAudioProcessorService : BaseAudioProcessorService() {
         registerLocalReceiver(receiver, filter)
         blockedApps.observeForever(blockedObserver)
         manager = object : BaseSessionManager(this) {
+            // AudioService supplies no native captureFlags. Privileged routing must
+            // use AudioPolicy's per-track restrictions without changing user preferences.
+            override fun loadSessionDump(): ISessionInfoDump? = dumpManager.dumpCaptureAllowlistLog()
             override fun handleSessionDump(sessionDump: ISessionInfoDump?) { if (!disposing && sessionDump != null) { dump = sessionDump; reconcile() } }
         }
         audio.registerAudioDeviceCallback(routes, handler)
@@ -174,6 +196,7 @@ class ShellAudioProcessorService : BaseAudioProcessorService() {
                 .setAudioFormat(AudioFormat.Builder().setSampleRate(g.rate).setChannelMask(AudioFormat.CHANNEL_OUT_STEREO).setEncoding(AudioFormat.ENCODING_PCM_16BIT).build())
                 .setBufferSizeInBytes(maxOf(minimum, 3840)).setTransferMode(AudioTrack.MODE_STREAM).build()
             synchronized(g) { if (g.closed.get()) { track.release(); return }; g.track = track }
+            track.addOnRoutingChangedListener(trackRouteListener, handler)
             track.play()
             g.connecting = true; g.lastWrite = SystemClock.elapsedRealtime()
             var source = openSource(this, 16000, uids, true)
@@ -188,6 +211,7 @@ class ShellAudioProcessorService : BaseAudioProcessorService() {
             val input = ShortArray(960); val output = ShortArray(960)
             while (!g.closed.get()) {
                 val n = source.read(input)
+                val capturedAt = SystemClock.elapsedRealtime()
                 if (n <= 0 || n > input.size || (!g.monitoring && n % 2 != 0)) throw IOException("Invalid capture transfer=$n")
                 if (g.monitoring) {
                     g.lastWrite = SystemClock.elapsedRealtime()
@@ -233,6 +257,7 @@ class ShellAudioProcessorService : BaseAudioProcessorService() {
                 var offset = 0
                 var progressAt = SystemClock.elapsedRealtime()
                 while (offset < n && !g.closed.get()) {
+                    if (SystemClock.elapsedRealtime() - capturedAt > 1000) throw IOException("Captured block expired before output")
                     val written = track.write(output, offset, n-offset, AudioTrack.WRITE_NON_BLOCKING)
                     if (written < 0 || written % 2 != 0) throw IOException("Output transfer=$written")
                     if (written == 0) {
@@ -271,13 +296,14 @@ class ShellAudioProcessorService : BaseAudioProcessorService() {
     private fun retireResources(g: Generation) {
         synchronized(g) {
             if (!g.closed.compareAndSet(false, true)) return
-            try { g.source?.close() } catch (e: Exception) { Timber.e(e, "FULL_ENGINE routing release failed; shell lease is the fallback") }
-            g.source = null
             g.track?.let { track ->
+                try { track.removeOnRoutingChangedListener(trackRouteListener) } catch (e: Exception) { Timber.w(e) }
                 try { if (track.playState == AudioTrack.PLAYSTATE_PLAYING) track.pause(); track.flush() } catch (e: Exception) { Timber.w(e, "FULL_ENGINE output flush failed") }
                 try { track.release() } catch (e: Exception) { Timber.e(e, "FULL_ENGINE output release failed") }
             }
             g.track = null
+            try { g.source?.close() } catch (e: Exception) { Timber.e(e, "FULL_ENGINE routing release failed; shell lease is the fallback") }
+            g.source = null
         }
     }
     private fun publish(status: CaptureStatus) {
@@ -300,10 +326,11 @@ class ShellAudioProcessorService : BaseAudioProcessorService() {
             manager?.destroy(); manager = null
             blockedApps.removeObserver(blockedObserver)
             prefs.unregisterOnSharedPreferenceChangeListener(prefsListener)
+            rikka.shizuku.Shizuku.removeBinderDeadListener(binderDead)
             unregisterLocalReceiver(receiver)
-            sendLocalBroadcast(Intent(Constants.ACTION_SERVICE_STOPPED))
         }
         scope.cancel()
+        sendLocalBroadcast(Intent(Constants.ACTION_SERVICE_STOPPED))
     }
     override fun onDestroy() { disposing = true; retire(generation); cleanup(); super.onDestroy() }
     companion object {

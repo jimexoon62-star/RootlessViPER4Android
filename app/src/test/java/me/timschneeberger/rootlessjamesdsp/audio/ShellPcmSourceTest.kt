@@ -8,7 +8,7 @@ class ShellPcmSourceTest {
     private fun packet(n: Int = 4, payload: Boolean = true): ByteArray {
         val bytes = ByteArrayOutputStream()
         DataOutputStream(bytes).use { out ->
-            out.writeInt(ShellRoutingWorker.MAGIC); out.writeInt(48000); out.writeInt(2); out.writeInt(n)
+            out.writeInt(ShellRoutingWorker.MAGIC); out.writeInt(48000); out.writeInt(2); out.writeInt(n); out.writeLong(0L)
             if (payload) repeat(maxOf(0, n)) { out.writeByte((it * 1234) and 255); out.writeByte((it * 1234) shr 8) }
         }
         return bytes.toByteArray()
@@ -66,6 +66,12 @@ class ShellPcmSourceTest {
             tasks.forEach { it.get(2,java.util.concurrent.TimeUnit.SECONDS) }
             assertEquals(1,releases.get())
         } finally { pool.shutdownNow() }
+    }
+
+    @Test fun bufferedAudioFromRetiredTimeWindowIsRejected() {
+        val source=ShellPcmSource.connected(ByteArrayInputStream(packet()),ByteArrayOutputStream(),{},2) { 2000L }
+        source.begin(48000)
+        try { source.read(ShortArray(960)); fail("Stale audio must not reach a new route") } catch (_:IOException) {} finally { source.close() }
     }
 
 }

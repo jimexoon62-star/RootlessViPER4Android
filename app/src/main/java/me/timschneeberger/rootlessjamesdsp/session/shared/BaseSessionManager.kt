@@ -62,7 +62,7 @@ abstract class BaseSessionManager(protected val context: Context) : DumpManager.
     private var continuousPollingJob: Job? = null
     private val pollCoordinator = SessionPollCoordinator(
         pollingScope,
-        load = { withContext(Dispatchers.IO) { dumpManager.dumpSessions() } },
+        load = { withContext(Dispatchers.IO) { loadSessionDump() } },
         accept = { dump ->
             val t0 = android.os.SystemClock.uptimeMillis()
             handleSessionDump(dump)
@@ -78,6 +78,9 @@ abstract class BaseSessionManager(protected val context: Context) : DumpManager.
     // Preferences
     private val preferencesListener: SharedPreferences.OnSharedPreferenceChangeListener
     private val preferences: Preferences.App by inject()
+
+    /** Backends may require native policy flags rather than public player attributes. */
+    protected open fun loadSessionDump(): ISessionInfoDump? = dumpManager.dumpSessions()
 
     protected abstract fun handleSessionDump(sessionDump: ISessionInfoDump?)
 

@@ -17,7 +17,8 @@ internal class ShellPcmSource private constructor(
     private val input: InputStream,
     private val acknowledgements: OutputStream,
     private val terminate: () -> Unit,
-    private val channels: Int = 2
+    private val channels: Int = 2,
+    private val clock: () -> Long = { android.os.SystemClock.elapsedRealtime() }
 ) : RoutedPcmSource {
     private val data = DataInputStream(input)
     private val closed = AtomicBoolean()
@@ -29,6 +30,9 @@ internal class ShellPcmSource private constructor(
     override fun read(output: ShortArray): Int {
         val n = data.readInt()
         if (n <= 0 || n > 960 || n > output.size || n % channels != 0) throw IOException("Invalid stereo PCM packet=$n")
+        val capturedAt = data.readLong()
+        val age = clock() - capturedAt
+        if (age < 0 || age > 1000) throw IOException("Stale PCM packet age=$age")
         data.readFully(bytes, 0, n * 2)
         for (i in 0 until n) output[i] = ((bytes[2*i].toInt() and 255) or (bytes[2*i+1].toInt() shl 8)).toShort()
         return n
@@ -50,12 +54,15 @@ internal class ShellPcmSource private constructor(
         fun open(context: Context, rate: Int, uids: Set<Int>, monitor: Boolean = false): ShellPcmSource {
             check(authorized()) { "Authorize Shizuku in ADB mode for the full engine" }
             require(uids.isNotEmpty() && uids.all { it >= 10000 && it != android.os.Process.myUid() })
-            val command = arrayOf("/system/bin/app_process", "/system/bin", ShellRoutingWorker::class.java.name, rate.toString()) + (if (monitor) listOf("monitor") else emptyList()) + uids.sorted().map { it.toString() }
+            // Inherit the server's Android runtime environment; supplying only CLASSPATH
+            // as envp would discard BOOTCLASSPATH and other required platform variables.
+            val script = "export CLASSPATH=\"${'$'}1\"; shift; exec /system/bin/app_process /system/bin \"${'$'}@\""
+            val command = arrayOf("/system/bin/sh", "-c", script, "rv4a", context.applicationInfo.sourceDir, ShellRoutingWorker::class.java.name, rate.toString()) + (if (monitor) listOf("monitor") else emptyList()) + uids.sorted().map { it.toString() }
             val method = Shizuku::class.java.getDeclaredMethod("newProcess", Array<String>::class.java, Array<String>::class.java, String::class.java)
             method.isAccessible = true
             val released = java.util.concurrent.CountDownLatch(1)
             val releaseFailed = AtomicBoolean()
-            val process = method.invoke(null, command, arrayOf("CLASSPATH=" + context.applicationInfo.sourceDir), null) as ShizukuRemoteProcess
+            val process = method.invoke(null, command, null, null) as ShizukuRemoteProcess
             Thread({
                 try { process.errorStream.bufferedReader().useLines { lines ->
                     var reported = 0
@@ -75,7 +82,7 @@ internal class ShellPcmSource private constructor(
             }, if (monitor) 1 else 2)
         }
         /** Package-private transport seam; instrumentation supplies a disposable shell relay. */
-        internal fun connected(input: InputStream, output: OutputStream, terminate: () -> Unit) = ShellPcmSource(input, output, terminate)
-        internal fun connected(input: InputStream, output: OutputStream, terminate: () -> Unit, channels: Int) = ShellPcmSource(input, output, terminate, channels)
+        internal fun connected(input: InputStream, output: OutputStream, terminate: () -> Unit) = ShellPcmSource(input, output, terminate, 2, { 0L })
+        internal fun connected(input: InputStream, output: OutputStream, terminate: () -> Unit, channels: Int, clock: () -> Long = { android.os.SystemClock.elapsedRealtime() }) = ShellPcmSource(input, output, terminate, channels, clock)
     }
 }

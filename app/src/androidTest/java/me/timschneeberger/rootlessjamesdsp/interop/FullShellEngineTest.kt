@@ -61,7 +61,7 @@ class FullShellEngineTest {
                     var clicked=false
                     val permissionUntil=SystemClock.elapsedRealtime()+10000
                     while(!clicked && SystemClock.elapsedRealtime()<permissionUntil) {
-                        val nodes=inst.uiAutomation.rootInActiveWindow?.findAccessibilityNodeInfosByViewId("moe.shizuku.privileged.api:id/button1").orEmpty()
+                        val nodes=inst.uiAutomation.rootInActiveWindow?.findAccessibilityNodeInfosByText("Allow all the time").orEmpty()
                         clicked=nodes.firstOrNull()?.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK)==true
                         if(!clicked) SystemClock.sleep(100)
                     }

@@ -23,6 +23,7 @@ public final class ShellRoutingWorker {
         if (args.length < 2) throw new IllegalArgumentException("rate and selected source UIDs required");
         final int rate = Integer.parseInt(args[0]);
         final boolean monitor = args[1].equals("monitor");
+        if (monitor && args.length < 3) throw new IllegalArgumentException("Monitor source UID required");
         if (monitor ? rate != 16000 : rate != 44100 && rate != 48000) throw new IllegalArgumentException("Unsupported rate");
         if (Looper.getMainLooper() == null) Looper.prepareMainLooper();
         else if (Looper.myLooper() == null) Looper.prepare();
@@ -100,6 +101,8 @@ public final class ShellRoutingWorker {
                 rb.setAudioFormat(new AudioFormat.Builder(format).setChannelMask(monitor ? AudioFormat.CHANNEL_IN_MONO : AudioFormat.CHANNEL_IN_STEREO).build());
                 rb.setBufferSizeInBytes(Math.max(19200, AudioRecord.getMinBufferSize(rate, monitor ? AudioFormat.CHANNEL_IN_MONO : AudioFormat.CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_16BIT)));
                 recordRef[0] = rb.build();
+                if (recordRef[0].getSampleRate() != rate || recordRef[0].getChannelCount() != (monitor ? 1 : 2))
+                    throw new IOException("Negotiated capture format differs from requested format");
                 recordRef[0].startRecording();
             }
             reader = new Thread(() -> {
@@ -129,7 +132,7 @@ public final class ShellRoutingWorker {
                 if (n < 0 || (!monitor && (n & 1) != 0)) throw new IOException("Capture transfer=" + n);
                 if (n == 0) { Thread.sleep(5); continue; }
                 for (int i = 0; i < n; i++) { bytes[2*i] = (byte)samples[i]; bytes[2*i+1] = (byte)(samples[i] >> 8); }
-                out.writeInt(n); out.write(bytes, 0, n * 2); out.flush();
+                out.writeInt(n); out.writeLong(SystemClock.elapsedRealtime()); out.write(bytes, 0, n * 2); out.flush();
             }
         } finally { close.run(); if (lease != null) lease.interrupt(); }
     }
