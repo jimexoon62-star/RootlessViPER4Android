@@ -24,8 +24,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
+import me.timschneeberger.rootlessjamesdsp.utils.SessionPollCoordinator
 import me.timschneeberger.rootlessjamesdsp.R
 import me.timschneeberger.rootlessjamesdsp.model.preference.SessionUpdateMode
 import me.timschneeberger.rootlessjamesdsp.service.NotificationListenerService
@@ -59,9 +58,19 @@ abstract class BaseSessionManager(protected val context: Context) : DumpManager.
     private var pollingTimeout = 3000L
 
     // Polling job
-    private val pollingMutex = Mutex()
     private val pollingScope = CoroutineScope(Dispatchers.Main)
     private var continuousPollingJob: Job? = null
+    private val pollCoordinator = SessionPollCoordinator(
+        pollingScope,
+        load = { withContext(Dispatchers.IO) { dumpManager.dumpSessions() } },
+        accept = { dump ->
+            val t0 = android.os.SystemClock.uptimeMillis()
+            handleSessionDump(dump)
+            val took = android.os.SystemClock.uptimeMillis() - t0
+            if (took > 8) Timber.d("PERF handleSessionDump ${took}ms on main")
+        },
+        onFailure = { Timber.e(it, "Session detection failed; awaiting the next update") }
+    )
 
     // Callbacks
     private var audioPlaybackCallback: AudioManager.AudioPlaybackCallback? = null
@@ -107,6 +116,7 @@ abstract class BaseSessionManager(protected val context: Context) : DumpManager.
     {
         Timber.d("Destroying SessionDumpManager")
 
+        pollCoordinator.close()
         pollingScope.cancel()
         preferences.unregisterOnSharedPreferenceChangeListener(preferencesListener)
         dumpManager.unregisterOnDumpMethodChangeListener(this)
@@ -166,7 +176,7 @@ abstract class BaseSessionManager(protected val context: Context) : DumpManager.
                 continuousPollingJob = pollingScope.launch {
                     while(continuousPollingJob != null && continuousPollingJob?.isCancelled == false)
                     {
-                        pollSessionDump()
+                        pollCoordinator.pollNow()
                         delay(pollingTimeout)
                     }
                 }
@@ -177,33 +187,12 @@ abstract class BaseSessionManager(protected val context: Context) : DumpManager.
         }
     }
 
-    private suspend fun pollSessionDump(blocking: Boolean = true)
-    {
-        if(pollingMutex.isLocked && !blocking)
-        {
-            return
-        }
-
-        pollingMutex.withLock {
-            // The dump itself is the expensive part - it reads and parses the
-            // audio service's state, measured at nearly five seconds on a cold
-            // start - and this scope runs on the main thread, so it froze the
-            // UI for that whole time. Do the reading off the main thread and
-            // hand only the result back, since handleSessionDump touches
-            // session state the UI observes.
-            val dump = withContext(Dispatchers.IO) { dumpManager.dumpSessions() }
-            val t0 = android.os.SystemClock.uptimeMillis()
-            handleSessionDump(dump)
-            val took = android.os.SystemClock.uptimeMillis() - t0
-            if (took > 8) Timber.d("PERF handleSessionDump ${took}ms on main")
-        }
-    }
-
+    @Suppress("UNUSED_PARAMETER")
     fun pollOnce(blocking: Boolean)
     {
-        pollingScope.launch {
-            pollSessionDump(blocking)
-        }
+        // Preserve the call API, but coalesce busy requests instead of dropping
+        // them. I/O stays serialized and off-main; result delivery stays main.
+        pollCoordinator.request()
     }
 
     @CallSuper
