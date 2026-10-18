@@ -48,7 +48,9 @@ Java_org_rv4a_captureprobe_DirectToneActivity_startNative(JNIEnv*, jclass, jint 
     AAudioStreamBuilder_setUsage(builder, AAUDIO_USAGE_MEDIA);
     AAudioStreamBuilder_setContentType(builder, AAUDIO_CONTENT_TYPE_MUSIC);
     AAudioStreamBuilder_setAllowedCapturePolicy(builder, AAUDIO_ALLOW_CAPTURE_BY_SYSTEM);
-    AAudioStreamBuilder_setSampleRate(builder, 48000);
+    // Match the Spotify source rate observed in the HONOR capture; the other
+    // fixture remains at 48 kHz. The callback uses the negotiated stream rate.
+    AAudioStreamBuilder_setSampleRate(builder, 44100);
     AAudioStreamBuilder_setChannelCount(builder, 2);
     AAudioStreamBuilder_setFormat(builder, AAUDIO_FORMAT_PCM_FLOAT);
     AAudioStreamBuilder_setSessionId(builder, AAUDIO_SESSION_ID_ALLOCATE);
