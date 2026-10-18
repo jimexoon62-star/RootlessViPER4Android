@@ -363,7 +363,7 @@ class MainActivity : BaseActivity() {
             showLibraryLoadError()
 
         // Rootless: Check permissions and launch onboarding if required
-        if(SdkCheck.isQ && isRootless() && (!hasDumpPermission() || !hasRecordPermission())) {
+        if(SdkCheck.isQ && isRootless() && (!hasDumpPermission() || (!me.timschneeberger.rootlessjamesdsp.service.DirectAudioProcessorService.enabled(this) && !hasRecordPermission()))) {
             Timber.i("Launching onboarding (first boot: $firstBoot)")
 
             startActivity(Intent(this, OnboardingActivity::class.java).apply {
@@ -617,6 +617,8 @@ class MainActivity : BaseActivity() {
     }
 
     private fun showAndroid15Alert() {
+        // Session insert effects do not use projection and need no permanent projection app-op.
+        if (me.timschneeberger.rootlessjamesdsp.service.DirectAudioProcessorService.enabled(this)) return
         if(!isRootless() || !SdkCheck.isVanillaIceCream)
             return
 
@@ -785,6 +787,11 @@ class MainActivity : BaseActivity() {
     fun requestCapturePermission() {
         if (me.timschneeberger.rootlessjamesdsp.service.DirectAudioProcessorService.enabled(this)) {
             RootlessAudioProcessorService.start(this, null)
+            return
+        }
+        if (!hasRecordPermission()) {
+            startActivity(Intent(this, OnboardingActivity::class.java).putExtra(OnboardingActivity.EXTRA_FIX_PERMS, true))
+            finish()
             return
         }
         if(app.mediaProjectionStartIntent != null && isRootless() && !SdkCheck.isVanillaIceCream) {

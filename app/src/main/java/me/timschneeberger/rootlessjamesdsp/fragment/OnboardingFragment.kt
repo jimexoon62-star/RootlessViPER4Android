@@ -447,7 +447,7 @@ class OnboardingFragment : Fragment() {
     private fun areAdbPermissionsGranted(): Boolean {
         return requireContext().hasDumpPermission() &&
                 // Android 15+ doesn't allow keyguard recording without PROJECT_MEDIA
-                requireContext().hasProjectMediaAppOp()
+                (me.timschneeberger.rootlessjamesdsp.service.DirectAudioProcessorService.enabled(requireContext()) || requireContext().hasProjectMediaAppOp())
     }
 
     private fun requestNextPage(nextPage: Int, forward: Boolean): Int
@@ -457,7 +457,8 @@ class OnboardingFragment : Fragment() {
             PAGE_METHOD_SELECT -> areAdbPermissionsGranted() && !redoAdbSetup
             PAGE_ADB_SETUP -> areAdbPermissionsGranted() && !redoAdbSetup
             PAGE_RUNTIME_PERMISSIONS -> {
-               requireContext().hasNotificationPermission() && requireContext().hasRecordPermission()
+               requireContext().hasNotificationPermission() &&
+                   (me.timschneeberger.rootlessjamesdsp.service.DirectAudioProcessorService.enabled(requireContext()) || requireContext().hasRecordPermission())
             }
             else -> false
         }
@@ -502,6 +503,11 @@ class OnboardingFragment : Fragment() {
                 Manifest.permission.DUMP,
                 UserHandle.USER_SYSTEM
             )
+
+            // Direct session processing needs session discovery only. Do not
+            // grant overlay or permanent projection privileges for this backend.
+            if (me.timschneeberger.rootlessjamesdsp.service.DirectAudioProcessorService.enabled(requireContext()))
+                return areAdbPermissionsGranted()
 
             // Grant SYSTEM_ALERT_WINDOW as shell
             try {
@@ -562,7 +568,7 @@ class OnboardingFragment : Fragment() {
             requireContext().showAlert(R.string.onboarding_adb_not_granted_title,
                 R.string.onboarding_adb_dump_permission_not_granted)
         }
-        else if(!requireContext().hasProjectMediaAppOp()) {
+        else if(!me.timschneeberger.rootlessjamesdsp.service.DirectAudioProcessorService.enabled(requireContext()) && !requireContext().hasProjectMediaAppOp()) {
             requireContext().showAlert(R.string.onboarding_adb_not_granted_title,
                 R.string.onboarding_adb_project_media_not_granted)
         }
@@ -573,7 +579,7 @@ class OnboardingFragment : Fragment() {
     private fun ensureRuntimePermissions(): Boolean
     {
         val requestedPermissions = arrayListOf<String>()
-        if(!requireContext().hasRecordPermission()) {
+        if(!me.timschneeberger.rootlessjamesdsp.service.DirectAudioProcessorService.enabled(requireContext()) && !requireContext().hasRecordPermission()) {
             requestedPermissions.add(Manifest.permission.RECORD_AUDIO)
         }
 
