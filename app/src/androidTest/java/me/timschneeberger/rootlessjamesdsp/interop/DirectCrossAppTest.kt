@@ -19,7 +19,9 @@ import org.junit.Test
 class DirectCrossAppTest {
     @Test fun audioServiceDiscoveryProcessesTwoOptedOutApps() = measure("1")
     @Test fun audioPolicyDiscoveryProcessesTwoOptedOutApps() = measure("0")
-    private fun measure(method:String) {
+    @Test fun officialVlcPlayerReceivesServiceGain() = measure("1", "org.videolan.vlc")
+    @Test fun officialMpvPlayerReceivesServiceGain() = measure("1", "is.xyz.mpv")
+    private fun measure(method:String, player:String?=null) {
         val instrumentation=InstrumentationRegistry.getInstrumentation()
         val context=instrumentation.targetContext
         fun main(action:()->Unit)=instrumentation.runOnMainSync(action)
@@ -41,6 +43,8 @@ class DirectCrossAppTest {
             } }; edit.commit()
         }
         var meter:Visualizer?=null
+        var toneFile:java.io.File?=null
+        var toneUri:android.net.Uri?=null
         try {
             main {
                 RootlessAudioProcessorService.stop(context)
@@ -49,13 +53,43 @@ class DirectCrossAppTest {
                 output.edit().putFloat(context.getString(R.string.key_output_postgain),0f).commit()
                 eq.edit().putBoolean(context.getString(R.string.key_eq_enable),false).commit()
             }
-            val launch=shell("am start -W -n org.rv4a.captureprobe/.DirectToneActivity")
-            assertFalse(launch,launch.contains("Error"))
-            val probeUid=context.packageManager.getApplicationInfo("org.rv4a.captureprobe",0).uid
+            if(player==null) {
+                val launch=shell("am start -W -n org.rv4a.captureprobe/.DirectToneActivity")
+                assertFalse(launch,launch.contains("Error"))
+            } else {
+                val file=java.io.File(context.filesDir,"synthetic-cross-app.wav"); toneFile=file
+                val frames=48000*60
+                fun bytes(size:Int)=java.nio.ByteBuffer.allocate(size).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+                file.outputStream().use { out ->
+                    val header=bytes(44).put("RIFF".toByteArray()).putInt(36+frames*4).put("WAVEfmt ".toByteArray())
+                        .putInt(16).putShort(1).putShort(2).putInt(48000).putInt(48000*4).putShort(4).putShort(16)
+                        .put("data".toByteArray()).putInt(frames*4)
+                    out.write(header.array())
+                    var frame=0
+                    repeat(600) {
+                        val block=bytes(4800*4)
+                        repeat(4800) {
+                            val value=(.2*32767*kotlin.math.sin(2*Math.PI*997*frame++/48000)).toInt().toShort()
+                            block.putShort(value).putShort(value)
+                        }
+                        out.write(block.array())
+                    }
+                }
+                val uri=androidx.core.content.FileProvider.getUriForFile(context,"${context.packageName}.dump_provider",file)
+                toneUri=uri
+                main {
+                    context.startActivity(Intent(Intent.ACTION_VIEW).setPackage(player).setDataAndType(uri,"audio/wav")
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION))
+                }
+                SystemClock.sleep(2000)
+            }
+            val probeUid=context.packageManager.getApplicationInfo(player ?: "org.rv4a.captureprobe",0).uid
             assertNotEquals("fixture must be another UID",android.os.Process.myUid(),probeUid)
-            val secondUid=context.packageManager.getApplicationInfo("org.rv4a.captureprobe.second",0).uid
-            assertNotEquals("fixtures must have distinct UIDs",probeUid,secondUid)
-            assertNotEquals(android.os.Process.myUid(),secondUid)
+            if(player==null) {
+                val secondUid=context.packageManager.getApplicationInfo("org.rv4a.captureprobe.second",0).uid
+                assertNotEquals("fixtures must have distinct UIDs",probeUid,secondUid)
+                assertNotEquals(android.os.Process.myUid(),secondUid)
+            }
             val m=Visualizer(0); meter=m
             assertEquals(Visualizer.SUCCESS,m.setScalingMode(Visualizer.SCALING_MODE_AS_PLAYED))
             assertEquals(Visualizer.SUCCESS,m.setMeasurementMode(Visualizer.MEASUREMENT_MODE_PEAK_RMS))
@@ -69,10 +103,11 @@ class DirectCrossAppTest {
                 }.sorted()[4]
             }
             val singleSource=rms(); assertTrue("single source baseline=$singleSource",singleSource> -7000)
-            val secondLaunch=shell("am start -W -n org.rv4a.captureprobe.second/org.rv4a.captureprobe.DirectToneActivity --ei frequency 1499 --ez aaudio true")
-            assertFalse(secondLaunch,secondLaunch.contains("Error"))
-            val baseline=rms()
-            assertTrue("AAudio source must contribute real signal: $singleSource -> $baseline",baseline-singleSource in 200..400)
+            val baseline=if(player==null) {
+                val secondLaunch=shell("am start -W -n org.rv4a.captureprobe.second/org.rv4a.captureprobe.DirectToneActivity --ei frequency 1499 --ez aaudio true")
+                assertFalse(secondLaunch,secondLaunch.contains("Error"))
+                rms().also { assertTrue("AAudio source must contribute real signal: $singleSource -> $it",it-singleSource in 200..400) }
+            } else singleSource
             main { RootlessAudioProcessorService.start(context,null) }
             val deadline=SystemClock.elapsedRealtime()+10000
             var controlled=false
@@ -91,12 +126,15 @@ class DirectCrossAppTest {
             main { RootlessAudioProcessorService.stop(context) }
             val restored=rms()
             assertTrue("service stop failed to restore source: $baseline -> $restored",kotlin.math.abs(restored-baseline)<250)
-            android.util.Log.i("DirectCrossAppTest","CROSS_APP_MEASUREMENT method=$method singleSource_mB=$singleSource baseline_mB=$baseline reduced_mB=$reduced restored_mB=$restored separateApps=2 sources=AudioTrack+AAudio capturePolicy=SYSTEM_ONLY")
+            android.util.Log.i("DirectCrossAppTest","CROSS_APP_MEASUREMENT method=$method singleSource_mB=$singleSource baseline_mB=$baseline reduced_mB=$reduced restored_mB=$restored source=${player ?: "AudioTrack+AAudio:SYSTEM_ONLY"}")
         } finally {
             main { RootlessAudioProcessorService.stop(context) }
             meter?.release()
             shell("am force-stop org.rv4a.captureprobe")
             shell("am force-stop org.rv4a.captureprobe.second")
+            if(player!=null) shell("am force-stop $player")
+            toneUri?.let { context.revokeUriPermission(it,Intent.FLAG_GRANT_READ_URI_PERMISSION) }
+            toneFile?.delete()
             main { restore(app,oldApp); restore(output,oldOutput); restore(eq,oldEq) }
         }
     }
