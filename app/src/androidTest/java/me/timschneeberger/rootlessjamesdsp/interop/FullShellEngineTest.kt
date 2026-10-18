@@ -36,6 +36,7 @@ class FullShellEngineTest {
     @Test fun lostRendererLeaseRestoresOriginalWithoutAppStop() = exercise(1)
     @Test fun forcedDspExceptionReleasesRoutingAndBoundsRetries() = exercise(2)
     @Test fun aaudio44100SourceUsesFullEngine() = exercise(0,true)
+    @Test fun actualShizukuConsentAndRemoteProcessRunsCompleteEngine() = exercise(3)
     private fun exercise(failure: Int, aaudio:Boolean=false) {
         val app=context.getSharedPreferences(Constants.PREF_APP,0)
         val output=context.getSharedPreferences(Constants.PREF_OUTPUT,0)
@@ -47,11 +48,34 @@ class FullShellEngineTest {
         val poisoned=java.util.concurrent.atomic.AtomicBoolean()
         val uid=context.packageManager.getApplicationInfo("org.rv4a.captureprobe",0).uid
         try {
+            if(failure==3) {
+                val accessibility=inst.uiAutomation.serviceInfo
+                accessibility.flags=accessibility.flags or android.accessibilityservice.AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS
+                inst.uiAutomation.serviceInfo=accessibility
+                val until=SystemClock.elapsedRealtime()+10000
+                while(!rikka.shizuku.Shizuku.pingBinder() && SystemClock.elapsedRealtime()<until) SystemClock.sleep(100)
+                assertTrue("Actual Shizuku binder unavailable",rikka.shizuku.Shizuku.pingBinder())
+                assertEquals(2000,rikka.shizuku.Shizuku.getUid())
+                if(rikka.shizuku.Shizuku.checkSelfPermission()!=android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                    main { rikka.shizuku.Shizuku.requestPermission(992) }
+                    var clicked=false
+                    val permissionUntil=SystemClock.elapsedRealtime()+10000
+                    while(!clicked && SystemClock.elapsedRealtime()<permissionUntil) {
+                        val nodes=inst.uiAutomation.rootInActiveWindow?.findAccessibilityNodeInfosByViewId("moe.shizuku.privileged.api:id/button1").orEmpty()
+                        clicked=nodes.firstOrNull()?.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK)==true
+                        if(!clicked) SystemClock.sleep(100)
+                    }
+                    assertTrue("Official Shizuku consent dialog not found",clicked)
+                    val grantedUntil=SystemClock.elapsedRealtime()+5000
+                    while(rikka.shizuku.Shizuku.checkSelfPermission()!=0 && SystemClock.elapsedRealtime()<grantedUntil) SystemClock.sleep(100)
+                    assertEquals(0,rikka.shizuku.Shizuku.checkSelfPermission())
+                }
+            }
             main {
                 RootlessAudioProcessorService.stop(context)
                 app.edit().putBoolean(ShellAudioProcessorService.MODE_KEY,true).commit()
                 output.edit().putFloat(context.getString(R.string.key_output_postgain),-12f).commit()
-                ShellAudioProcessorService.authorizationCheck={true}
+                ShellAudioProcessorService.authorizationCheck=if(failure==3) null else { {true} }
                 ShellAudioProcessorService.sourceFactory={_,rate,uids,monitor->
                     if(poisoned.get()) throw java.io.IOException("Injected unavailable recovery transport")
                     assertEquals(setOf(uid),uids)
@@ -80,6 +104,7 @@ class FullShellEngineTest {
                     }
                 }
             }
+            if(failure==3) ShellAudioProcessorService.sourceFactory=null
             if(failure==2) ShellAudioProcessorService.beforeProcess={
                 if(fullBlocks.incrementAndGet()>500) {
                     failureAt.compareAndSet(0,SystemClock.elapsedRealtime()); poisoned.set(true)
@@ -97,16 +122,16 @@ class FullShellEngineTest {
             while(processed-baseline !in -1500..-900 && SystemClock.elapsedRealtime()<waitUntil) processed=rms(m)
             assertTrue("Full native gain absent $baseline -> $processed; transports=${connections.get()}",processed-baseline in -1500..-900)
             val start=SystemClock.elapsedRealtime()
-            if(failure==0) main { RootlessAudioProcessorService.stop(context) }
+            if(failure==0 || failure==3) main { RootlessAudioProcessorService.stop(context) }
             var restored=rms(m)
             while(kotlin.math.abs(restored-baseline)>250 && SystemClock.elapsedRealtime()-start<15000) restored=rms(m)
             assertTrue("Original playback not restored: $baseline -> $restored",kotlin.math.abs(restored-baseline)<250)
             val recovery=SystemClock.elapsedRealtime()-(if(failureAt.get()>0) failureAt.get() else start)
-            if(failure!=0) assertTrue("Fault was not injected",failureAt.get()>0)
+            if(failure in 1..2) assertTrue("Fault was not injected",failureAt.get()>0)
             assertTrue("Recovery observation exceeded bound: $recovery",recovery<5000)
             android.util.Log.i("FullShellEngineTest","FULL_ENGINE failure=$failure baseline=$baseline processed=$processed restored=$restored recoveryObservationMs=$recovery transports=${connections.get()}")
-            if(failure!=0) { SystemClock.sleep(2500); assertTrue("Runaway recovery transports",connections.get()<=4) }
-            assertTrue("Monitor and full-rate capture must both execute",connections.get()>=2)
+            if(failure in 1..2) { SystemClock.sleep(2500); assertTrue("Runaway recovery transports",connections.get()<=4) }
+            if(failure!=3) assertTrue("Monitor and full-rate capture must both execute",connections.get()>=2)
         } finally {
             main {
                 RootlessAudioProcessorService.stop(context)

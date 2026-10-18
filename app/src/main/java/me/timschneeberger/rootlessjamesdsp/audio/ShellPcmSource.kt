@@ -53,14 +53,26 @@ internal class ShellPcmSource private constructor(
             val command = arrayOf("/system/bin/app_process", "/system/bin", ShellRoutingWorker::class.java.name, rate.toString()) + (if (monitor) listOf("monitor") else emptyList()) + uids.sorted().map { it.toString() }
             val method = Shizuku::class.java.getDeclaredMethod("newProcess", Array<String>::class.java, Array<String>::class.java, String::class.java)
             method.isAccessible = true
+            val released = java.util.concurrent.CountDownLatch(1)
+            val releaseFailed = AtomicBoolean()
             val process = method.invoke(null, command, arrayOf("CLASSPATH=" + context.applicationInfo.sourceDir), null) as ShizukuRemoteProcess
             Thread({
                 try { process.errorStream.bufferedReader().useLines { lines ->
                     var reported = 0
-                    lines.forEach { if (reported++ < 12) timber.log.Timber.w("SHELL_WORKER: %s", it.take(300)) }
+                    lines.forEach {
+                        if (it.startsWith("SHELL_ROUTE_RELEASE_FAILED")) releaseFailed.set(true)
+                        if (it == "SHELL_ROUTE_RELEASED") released.countDown()
+                        if (reported++ < 12 || it.startsWith("SHELL_ROUTE_RELEASE_FAILED")) timber.log.Timber.w("SHELL_WORKER: %s", it.take(300))
+                    }
                 } } catch (_: Exception) {}
             }, "ShellCaptureDiagnostics").apply { isDaemon = true; start() }
-            return ShellPcmSource(process.inputStream, process.outputStream, { process.destroy() }, if (monitor) 1 else 2)
+            return ShellPcmSource(process.inputStream, process.outputStream, {
+                var confirmed = false
+                try { confirmed = released.await(250, java.util.concurrent.TimeUnit.MILLISECONDS) }
+                catch (_: InterruptedException) { Thread.currentThread().interrupt() }
+                finally { process.destroy() }
+                if (!confirmed || releaseFailed.get()) timber.log.Timber.e("SHELL_ROUTE_RELEASE_UNCONFIRMED: terminating policy-owner process; Binder-death cleanup is required")
+            }, if (monitor) 1 else 2)
         }
         /** Package-private transport seam; instrumentation supplies a disposable shell relay. */
         internal fun connected(input: InputStream, output: OutputStream, terminate: () -> Unit) = ShellPcmSource(input, output, terminate)

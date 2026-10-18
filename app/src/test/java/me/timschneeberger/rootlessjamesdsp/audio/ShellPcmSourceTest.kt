@@ -57,4 +57,15 @@ class ShellPcmSourceTest {
         try { source.rendered(); fail("Retired generation") } catch (_: IOException) {}
         assertEquals(0, ack.size())
     }
+    @Test fun concurrentShutdownReleasesTransportExactlyOnce() {
+        val releases=java.util.concurrent.atomic.AtomicInteger()
+        val source=ShellPcmSource.connected(ByteArrayInputStream(packet()),ByteArrayOutputStream()) { releases.incrementAndGet(); Unit }
+        val pool=java.util.concurrent.Executors.newFixedThreadPool(4)
+        try {
+            val tasks=(0 until 20).map { pool.submit { source.close() } }
+            tasks.forEach { it.get(2,java.util.concurrent.TimeUnit.SECONDS) }
+            assertEquals(1,releases.get())
+        } finally { pool.shutdownNow() }
+    }
+
 }
