@@ -1,1 +1,1 @@
-Production runtime frozen at 777e121. Instrumentation source e3dfa66 corrects only the output-mix quiet-signal gate, retaining the exact -12 dB / EQ / release assertions. App APK is unchanged from the preceding run. Fixture APKs contain no owner diagnostics; GPL-3.0 sources remain in the parent history.
+Production runtime frozen at 777e121. Instrumentation source dcf14fd includes the calibrated meter floor and a genuine BIND_AUTO_CREATE retained-service fault. The production app APK is unchanged. No owner diagnostics are included; GPL-3.0 source is in parent history.
