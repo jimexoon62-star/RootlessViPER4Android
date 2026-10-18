@@ -56,8 +56,6 @@ class DirectCrossAppTest {
             val secondUid=context.packageManager.getApplicationInfo("org.rv4a.captureprobe.second",0).uid
             assertNotEquals("fixtures must have distinct UIDs",probeUid,secondUid)
             assertNotEquals(android.os.Process.myUid(),secondUid)
-            val secondLaunch=shell("am start -W -n org.rv4a.captureprobe.second/org.rv4a.captureprobe.DirectToneActivity --ei frequency 1499")
-            assertFalse(secondLaunch,secondLaunch.contains("Error"))
             val m=Visualizer(0); meter=m
             assertEquals(Visualizer.SUCCESS,m.setScalingMode(Visualizer.SCALING_MODE_AS_PLAYED))
             assertEquals(Visualizer.SUCCESS,m.setMeasurementMode(Visualizer.MEASUREMENT_MODE_PEAK_RMS))
@@ -70,7 +68,11 @@ class DirectCrossAppTest {
                     SystemClock.sleep(60); value.mRms
                 }.sorted()[4]
             }
-            val baseline=rms(); assertTrue("baseline=$baseline",baseline> -7000)
+            val singleSource=rms(); assertTrue("single source baseline=$singleSource",singleSource> -7000)
+            val secondLaunch=shell("am start -W -n org.rv4a.captureprobe.second/org.rv4a.captureprobe.DirectToneActivity --ei frequency 1499 --ez aaudio true")
+            assertFalse(secondLaunch,secondLaunch.contains("Error"))
+            val baseline=rms()
+            assertTrue("AAudio source must contribute real signal: $singleSource -> $baseline",baseline-singleSource in 200..400)
             main { RootlessAudioProcessorService.start(context,null) }
             val deadline=SystemClock.elapsedRealtime()+10000
             var controlled=false
@@ -89,7 +91,7 @@ class DirectCrossAppTest {
             main { RootlessAudioProcessorService.stop(context) }
             val restored=rms()
             assertTrue("service stop failed to restore source: $baseline -> $restored",kotlin.math.abs(restored-baseline)<250)
-            android.util.Log.i("DirectCrossAppTest","CROSS_APP_MEASUREMENT method=$method baseline_mB=$baseline reduced_mB=$reduced restored_mB=$restored separateApps=2 capturePolicy=SYSTEM_ONLY")
+            android.util.Log.i("DirectCrossAppTest","CROSS_APP_MEASUREMENT method=$method singleSource_mB=$singleSource baseline_mB=$baseline reduced_mB=$reduced restored_mB=$restored separateApps=2 sources=AudioTrack+AAudio capturePolicy=SYSTEM_ONLY")
         } finally {
             main { RootlessAudioProcessorService.stop(context) }
             meter?.release()

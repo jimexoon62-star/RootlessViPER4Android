@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.22.1)
+project(direct_tone)
+add_library(direct_tone SHARED direct_tone.cpp)
+target_link_libraries(direct_tone aaudio)
+target_compile_features(direct_tone PRIVATE cxx_std_17)
