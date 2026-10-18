@@ -40,6 +40,7 @@ class ShellAudioProcessorService : BaseAudioProcessorService() {
     @Volatile private var disposing = false
     private var cleaned = false
     private var selected = emptySet<Int>()
+    private var sourceOwners = emptySet<Pair<Int, Int>>()
     private var failures = 0
     private var serial = 0L
     @Volatile private var generation: Generation? = null
@@ -80,7 +81,7 @@ class ShellAudioProcessorService : BaseAudioProcessorService() {
         override fun onAudioDevicesRemoved(devices: Array<out AudioDeviceInfo>) = changed(devices)
         private fun changed(devices: Array<out AudioDeviceInfo>) {
             if (devices.any { it.isSink && it.type != AudioDeviceInfo.TYPE_REMOTE_SUBMIX }) {
-                retire(generation) // Flush the old route immediately; only re-creation is debounced.
+                retire(generation); publish(CaptureStatus.CHECKING) // Flush before debounce.
                 failures = 0
                 handler.removeCallbacks(routeRestart); handler.postDelayed(routeRestart, 500)
             }
@@ -94,7 +95,7 @@ class ShellAudioProcessorService : BaseAudioProcessorService() {
                 val previous = g.routeId
                 g.routeId = device.id
                 if (previous != 0 && previous != device.id) {
-                    retire(g); failures = 0
+                    retire(g); failures = 0; publish(CaptureStatus.CHECKING)
                     handler.removeCallbacks(routeRestart); handler.postDelayed(routeRestart, 500)
                 }
             }
@@ -133,7 +134,7 @@ class ShellAudioProcessorService : BaseAudioProcessorService() {
         super.onCreate()
         startForeground(Notifications.ID_SERVICE_STATUS, ServiceNotificationHelper.createServiceNotification(this, arrayOf()), ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
         if (activeServices > 1 || !requested(this)) { requestStop(); return }
-        if (!isAuthorized()) {
+        if (!ShellPcmSource.authorized()) {
             Timber.e("FULL_ENGINE: Shizuku ADB authorization unavailable; no routing created")
             toast("Full ViPER requires Shizuku running in wireless/USB debugging mode and authorization for this app.", true)
             publish(CaptureStatus.DIRECT); requestStop(); return
@@ -167,10 +168,19 @@ class ShellAudioProcessorService : BaseAudioProcessorService() {
         if (!initialized || disposing) return
         val allowlist = prefs.getBoolean(getString(R.string.key_blocklist_allowlist_mode), false)
         val next = ShellRouteSelection.select(dump?.sessions?.values.orEmpty(), android.os.Process.myUid(), packageName, blocked, allowlist)
+        val owners = dump?.sessions.orEmpty().filterValues { it.uid in next && it.isUsageRecordable() }
+            .map { it.key to it.value.uid }.toSet()
+        val newSourceIdentity = owners != sourceOwners
+        sourceOwners = owners
         if (next != selected) {
             retire(generation); selected = next.toSet(); failures = 0
             publish(CaptureStatus.CHECKING)
             scheduleStart(0)
+        } else if (newSourceIdentity && generation == null && failures > 2) {
+            // A new player/session is new recovery evidence, not another retry loop
+            // caused by our own capture/output callbacks on the same owner UID.
+            failures = 0
+            scheduleStart(500)
         }
     }
     private val startTask = Runnable { startGeneration() }
@@ -268,7 +278,7 @@ class ShellAudioProcessorService : BaseAudioProcessorService() {
                 if (g.closed.get()) break
                 g.framesOut += n / 2; g.lastWrite = SystemClock.elapsedRealtime(); g.ready = true
                 source.rendered() // Only successful complete PCM writes renew the routing lease.
-                if (!published) { published = true; handler.post { if (generation === g) publish(CaptureStatus.SIGNAL_PROGRESS) } }
+                if (!published && !inputQuiet) { published = true; handler.post { if (generation === g) publish(CaptureStatus.SIGNAL_PROGRESS) } }
             }
         } catch (e: Throwable) {
             if (!g.closed.get()) handler.post { fail(g, "${e.javaClass.simpleName}: ${e.message}") }
@@ -338,8 +348,6 @@ class ShellAudioProcessorService : BaseAudioProcessorService() {
         fun requested(context: Context) = context.getSharedPreferences(Constants.PREF_APP, Context.MODE_PRIVATE).getBoolean(MODE_KEY, true)
         internal var sourceFactory: ((Context, Int, Set<Int>, Boolean) -> RoutedPcmSource)? = null
         internal var beforeProcess: (() -> Unit)? = null
-        internal var authorizationCheck: (() -> Boolean)? = null
-        private fun isAuthorized() = authorizationCheck?.invoke() ?: ShellPcmSource.authorized()
         private fun openSource(context: Context, rate: Int, uids: Set<Int>, monitor: Boolean) = sourceFactory?.invoke(context, rate, uids, monitor) ?: ShellPcmSource.open(context, rate, uids, monitor)
     }
 }

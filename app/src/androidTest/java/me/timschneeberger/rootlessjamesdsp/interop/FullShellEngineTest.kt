@@ -2,8 +2,6 @@ package me.timschneeberger.rootlessjamesdsp.interop
 
 import android.content.*
 import android.media.audiofx.Visualizer
-import android.net.LocalSocket
-import android.net.LocalSocketAddress
 import android.os.SystemClock
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -15,7 +13,6 @@ import me.timschneeberger.rootlessjamesdsp.utils.extensions.ContextExtensions.se
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.io.DataOutputStream
 import java.util.concurrent.atomic.AtomicInteger
 
 @RunWith(AndroidJUnit4::class)
@@ -37,18 +34,21 @@ class FullShellEngineTest {
     @Test fun forcedDspExceptionReleasesRoutingAndBoundsRetries() = exercise(2)
     @Test fun aaudio44100SourceUsesFullEngine() = exercise(0,true)
     @Test fun actualShizukuConsentAndRemoteProcessRunsCompleteEngine() = exercise(3)
+    @Test fun physicalRouteCallbackRetiresAndRecoversGeneration() = exercise(4)
+    @Test fun heldBinderShutdownAndRepeatedEnableDisableReleaseRouting() = exercise(5)
     private fun exercise(failure: Int, aaudio:Boolean=false) {
         val app=context.getSharedPreferences(Constants.PREF_APP,0)
         val output=context.getSharedPreferences(Constants.PREF_OUTPUT,0)
         val oldApp=HashMap(app.all); val oldOutput=HashMap(output.all)
         var m:Visualizer?=null
+        var heldConnection:ServiceConnection?=null
         val connections=AtomicInteger()
         val fullBlocks=AtomicInteger()
         val failureAt=java.util.concurrent.atomic.AtomicLong()
         val poisoned=java.util.concurrent.atomic.AtomicBoolean()
         val uid=context.packageManager.getApplicationInfo("org.rv4a.captureprobe",0).uid
         try {
-            if(failure==3) {
+            run {
                 val accessibility=inst.uiAutomation.serviceInfo
                 accessibility.flags=accessibility.flags or android.accessibilityservice.AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS
                 inst.uiAutomation.serviceInfo=accessibility
@@ -75,23 +75,11 @@ class FullShellEngineTest {
                 RootlessAudioProcessorService.stop(context)
                 app.edit().putBoolean(ShellAudioProcessorService.MODE_KEY,true).commit()
                 output.edit().putFloat(context.getString(R.string.key_output_postgain),-12f).commit()
-                ShellAudioProcessorService.authorizationCheck=if(failure==3) null else { {true} }
                 ShellAudioProcessorService.sourceFactory={_,rate,uids,monitor->
                     if(poisoned.get()) throw java.io.IOException("Injected unavailable recovery transport")
                     assertEquals(setOf(uid),uids)
-                    val index=connections.getAndIncrement()
-                    val name="rv4a_full_$index"
-                    // Launch the SAME production worker with a separate test-only relay main.
-                    shell("CLASSPATH=/data/local/tmp/full-relay.jar:/data/local/tmp/full-app.apk app_process /system/bin ShellTestRelay $name $uid > /data/local/tmp/full-relay-$index.log 2>&1 < /dev/null &")
-                    val socket=LocalSocket()
-                    var connected=false
-                    for(attempt in 0..40) {
-                        try { socket.connect(LocalSocketAddress(name)); connected=true; break }
-                        catch (_:Exception) { SystemClock.sleep(50) }
-                    }
-                    check(connected) { "Shell relay failed: "+shell("cat /data/local/tmp/full-relay-$index.log") }
-                    DataOutputStream(socket.outputStream).apply { writeInt(rate); writeInt(if(monitor)1 else 0); writeInt(uid); flush() }
-                    val delegate=ShellPcmSource.connected(socket.inputStream,socket.outputStream,{socket.close()},if(monitor)1 else 2)
+                    connections.incrementAndGet()
+                    val delegate=ShellPcmSource.open(context,rate,uids,monitor)
                     object : me.timschneeberger.rootlessjamesdsp.audio.RoutedPcmSource {
                         override fun begin(rate:Int)=delegate.begin(rate)
                         override fun read(output:ShortArray)=delegate.read(output)
@@ -121,8 +109,34 @@ class FullShellEngineTest {
             val waitUntil=SystemClock.elapsedRealtime()+15000
             while(processed-baseline !in -1500..-900 && SystemClock.elapsedRealtime()<waitUntil) processed=rms(m)
             assertTrue("Full native gain absent $baseline -> $processed; transports=${connections.get()}",processed-baseline in -1500..-900)
+            if(failure==4) {
+                val before=connections.get()
+                main {
+                    val service=BaseAudioProcessorService.liveInstances().filterIsInstance<ShellAudioProcessorService>().single()
+                    val field=ShellAudioProcessorService::class.java.getDeclaredField("routes").apply { isAccessible=true }
+                    val callback=field.get(service) as android.media.AudioDeviceCallback
+                    val devices=context.getSystemService(android.media.AudioManager::class.java).getDevices(android.media.AudioManager.GET_DEVICES_OUTPUTS)
+                        .filter { it.isSink && it.type!=android.media.AudioDeviceInfo.TYPE_REMOTE_SUBMIX }.toTypedArray()
+                    assertTrue(devices.isNotEmpty()); callback.onAudioDevicesAdded(devices)
+                }
+                var recovered=rms(m)
+                val until=SystemClock.elapsedRealtime()+15000
+                while(recovered-baseline !in -1500..-900 && SystemClock.elapsedRealtime()<until) recovered=rms(m)
+                assertTrue("Route callback did not recover native DSP",recovered-baseline in -1500..-900)
+                assertTrue("Route callback did not replace the generation",connections.get()>before)
+                assertEquals(1,BaseAudioProcessorService.activeServices)
+            }
+            if(failure==5) {
+                val bound=java.util.concurrent.CountDownLatch(1)
+                val connection=object:ServiceConnection {
+                    override fun onServiceConnected(name:ComponentName,binder:android.os.IBinder) { bound.countDown() }
+                    override fun onServiceDisconnected(name:ComponentName) {}
+                }
+                main { assertTrue(context.bindService(Intent(context,ShellAudioProcessorService::class.java),connection,Context.BIND_AUTO_CREATE)); heldConnection=connection }
+                assertTrue(bound.await(3,java.util.concurrent.TimeUnit.SECONDS))
+            }
             val start=SystemClock.elapsedRealtime()
-            if(failure==0 || failure==3) main { RootlessAudioProcessorService.stop(context) }
+            if(failure==0 || failure>=3) main { RootlessAudioProcessorService.stop(context) }
             var restored=rms(m)
             while(kotlin.math.abs(restored-baseline)>250 && SystemClock.elapsedRealtime()-start<15000) restored=rms(m)
             assertTrue("Original playback not restored: $baseline -> $restored",kotlin.math.abs(restored-baseline)<250)
@@ -131,11 +145,42 @@ class FullShellEngineTest {
             assertTrue("Recovery observation exceeded bound: $recovery",recovery<5000)
             android.util.Log.i("FullShellEngineTest","FULL_ENGINE failure=$failure baseline=$baseline processed=$processed restored=$restored recoveryObservationMs=$recovery transports=${connections.get()}")
             if(failure in 1..2) { SystemClock.sleep(2500); assertTrue("Runaway recovery transports",connections.get()<=4) }
+            if(failure==5) {
+                assertTrue(BaseAudioProcessorService.liveInstances().filterIsInstance<ShellAudioProcessorService>().single().hasStoppedProcessing)
+                main { context.unbindService(heldConnection!!); heldConnection=null }
+                repeat(2) {
+                    val untilStopped=SystemClock.elapsedRealtime()+3000
+                    while(BaseAudioProcessorService.activeServices!=0 && SystemClock.elapsedRealtime()<untilStopped) SystemClock.sleep(50)
+                    assertEquals(0,BaseAudioProcessorService.activeServices)
+                    main { RootlessAudioProcessorService.start(context,null) }
+                    var active=rms(m)
+                    val until=SystemClock.elapsedRealtime()+15000
+                    while(active-baseline !in -1500..-900 && SystemClock.elapsedRealtime()<until) active=rms(m)
+                    assertTrue("Repeated start failed",active-baseline in -1500..-900)
+                    main { RootlessAudioProcessorService.stop(context) }
+                    val direct=rms(m)
+                    assertTrue("Repeated stop left source suppressed",kotlin.math.abs(direct-baseline)<250)
+                }
+            }
+            if(failure==2) {
+                // Keep the original player alive: the new player has the SAME UID,
+                // so only a new session identity can reopen an exhausted budget.
+                poisoned.set(false); ShellAudioProcessorService.beforeProcess=null
+                val previous=connections.get()
+                shell("am start -W -f 0x18000000 -n org.rv4a.captureprobe/.DirectToneActivity --ei frequency 1499")
+                var reattached=rms(m)
+                val until=SystemClock.elapsedRealtime()+15000
+                while(reattached-baseline !in -1200..-600 && SystemClock.elapsedRealtime()<until) reattached=rms(m)
+                assertTrue("Same-UID new session did not recover full DSP: $baseline -> $reattached",reattached-baseline in -1200..-600)
+                assertTrue("No new capture generation for the new session",connections.get()>previous)
+                android.util.Log.i("FullShellEngineTest","SESSION_REATTACH sameUID=true baseline=$baseline reattached=$reattached transports=${connections.get()}")
+            }
             if(failure!=3) assertTrue("Monitor and full-rate capture must both execute",connections.get()>=2)
         } finally {
             main {
                 RootlessAudioProcessorService.stop(context)
-                ShellAudioProcessorService.beforeProcess=null; ShellAudioProcessorService.sourceFactory=null; ShellAudioProcessorService.authorizationCheck=null
+                heldConnection?.let { context.unbindService(it); heldConnection=null }
+                ShellAudioProcessorService.beforeProcess=null; ShellAudioProcessorService.sourceFactory=null;
                 fun restore(p:android.content.SharedPreferences,values:Map<String,*>) { val edit=p.edit().clear(); values.forEach { (key,value)->when(value) { is Boolean->edit.putBoolean(key,value); is Float->edit.putFloat(key,value); is Int->edit.putInt(key,value); is Long->edit.putLong(key,value); is String->edit.putString(key,value) } }; edit.commit() }
                 restore(app,oldApp); restore(output,oldOutput)
             }
