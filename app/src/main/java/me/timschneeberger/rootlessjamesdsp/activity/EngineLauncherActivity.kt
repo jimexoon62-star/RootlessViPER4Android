@@ -32,6 +32,11 @@ class EngineLauncherActivity : BaseActivity() {
             return
         }
 
+        if (me.timschneeberger.rootlessjamesdsp.service.DirectAudioProcessorService.enabled(this)) {
+            RootlessAudioProcessorService.start(this, null)
+            finish()
+            return
+        }
         sdkAbove(Build.VERSION_CODES.Q) {
             // If projection token available, start immediately
             // Note: Android >=14 doesn't allow token reuse

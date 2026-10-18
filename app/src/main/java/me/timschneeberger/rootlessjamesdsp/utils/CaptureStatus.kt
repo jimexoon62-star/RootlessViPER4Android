@@ -2,7 +2,7 @@ package me.timschneeberger.rootlessjamesdsp.utils
 
 /** API-level signal/progress evidence; never a claim of independently heard output. */
 enum class CaptureStatus {
-    CHECKING, SIGNAL_PROGRESS, RESTRICTED, DIRECT;
+    CHECKING, SIGNAL_PROGRESS, RESTRICTED, DIRECT, DIRECT_EFFECTS, DIRECT_WAITING;
     companion object {
         const val ACTION_CHANGED = "me.timschneeberger.rootlessjamesdsp.CAPTURE_STATUS_CHANGED"
         fun resolve(failed: Boolean, restricted: Boolean, signal: Boolean,

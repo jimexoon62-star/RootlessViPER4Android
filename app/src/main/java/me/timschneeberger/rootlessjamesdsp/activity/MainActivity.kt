@@ -112,7 +112,8 @@ class MainActivity : BaseActivity() {
 
                 processorService = (service as BaseAudioProcessorService.LocalBinder).service
                 processorServiceBound = true
-                (processorService as? RootlessAudioProcessorService)?.currentCaptureStatus?.let {
+                ((processorService as? RootlessAudioProcessorService)?.currentCaptureStatus
+                    ?: (processorService as? me.timschneeberger.rootlessjamesdsp.service.DirectAudioProcessorService)?.currentCaptureStatus)?.let {
                     binding.toolbar.subtitle = getString(ServiceNotificationHelper.captureStatusText(it))
                 }
 
@@ -751,7 +752,7 @@ class MainActivity : BaseActivity() {
     private fun bindProcessorService() {
         if (isRootless()) {
             sdkAbove(Build.VERSION_CODES.Q) {
-                Intent(this, RootlessAudioProcessorService::class.java).also { intent ->
+                Intent(this, me.timschneeberger.rootlessjamesdsp.service.DirectAudioProcessorService.selectedService(this)).also { intent ->
                     val ret = bindService(intent, processorServiceConnection, 0)
                     // Service not active
                     if (!ret)
@@ -778,6 +779,10 @@ class MainActivity : BaseActivity() {
 
     @RequiresApi(Build.VERSION_CODES.Q)
     fun requestCapturePermission() {
+        if (me.timschneeberger.rootlessjamesdsp.service.DirectAudioProcessorService.enabled(this)) {
+            RootlessAudioProcessorService.start(this, null)
+            return
+        }
         if(app.mediaProjectionStartIntent != null && isRootless() && !SdkCheck.isVanillaIceCream) {
             binding.powerToggle.isToggled = true
             RootlessAudioProcessorService.start(this, app.mediaProjectionStartIntent)

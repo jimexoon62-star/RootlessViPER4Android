@@ -1,6 +1,14 @@
 <PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <PreferenceCategory app:title="@string/direct_compatibility_title" app:iconSpaceReserved="false">
+        <me.timschneeberger.rootlessjamesdsp.preference.MaterialSwitchPreference
+            app:key="@string/key_direct_session_compatibility"
+            app:title="@string/direct_compatibility_title"
+            app:summary="@string/direct_compatibility_summary"
+            app:defaultValue="@bool/default_direct_session_compatibility"
+            app:iconSpaceReserved="false" />
+    </PreferenceCategory>
     <PreferenceCategory app:title="@string/troubleshooting_docs"
         app:iconSpaceReserved="false">
         <Preference

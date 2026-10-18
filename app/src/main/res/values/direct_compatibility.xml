@@ -1,0 +1,8 @@
+<resources>
+    <string name="key_direct_session_compatibility" translatable="false">direct_session_compatibility</string>
+    <bool name="default_direct_session_compatibility">true</bool>
+    <string name="direct_compatibility_title">Direct session compatibility (EQ and gain only)</string>
+    <string name="direct_compatibility_summary">Uses Android DynamicsProcessing on original playback without capture or muting. Only graphic EQ and post gain apply, with automatic EQ headroom and a fixed limiter; other ViPER effects do not apply. Changing this stops processing; switch power on again. Disable for the full ViPER capture engine.</string>
+    <string name="direct_effects_status">Direct EQ/gain control acquired; other ViPER effects inactive</string>
+    <string name="direct_waiting_status">Direct EQ/gain: waiting for a controllable audio session</string>
+</resources>

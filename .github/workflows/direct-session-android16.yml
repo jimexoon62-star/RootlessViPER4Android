@@ -1,0 +1,52 @@
+name: Android 16 direct session compatibility validation
+on:
+  push:
+    branches: [qa/direct-session-android16]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  startup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+      - name: Build normally installable x86_64 release and instrumentation
+        run: ./gradlew --no-daemon --max-workers=2 -Pandroid.injected.build.abi=x86_64 -Pandroid.injected.testOnly=false :app:assembleRootlessFdroidRelease :app:assembleRootlessFdroidReleaseAndroidTest :audio-capture-probe:assembleDebug
+      - name: Obtain official baseline
+        run: curl -fL 'https://github.com/alienware377/RootlessViPER4Android/releases/download/v4.0.0/ViPER4Android-v4.0.0-rootless-fdroid-x86_64-release.apk' -o /tmp/rv4a-original.apk
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Android 16 installation, fresh startup, upgrade and native regressions
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          target: google_apis
+          arch: x86_64
+          ram-size: 2048M
+          disable-animations: true
+          script: bash ci/signal-status-android16.sh
+      - name: Upload emulator evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android16-startup-evidence
+          path: startup-evidence/
+      - name: Retain built test APKs for reproducible fixture reruns
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: built-signal-test-apks
+          path: |
+            app/build/intermediates/apk/**/*.apk
+            audio-capture-probe/build/intermediates/apk/**/*.apk

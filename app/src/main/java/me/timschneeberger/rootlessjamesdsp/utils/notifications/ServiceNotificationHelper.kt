@@ -63,6 +63,8 @@ object ServiceNotificationHelper: KoinComponent {
     fun captureStatusText(status: me.timschneeberger.rootlessjamesdsp.utils.CaptureStatus): Int = when (status) {
             me.timschneeberger.rootlessjamesdsp.utils.CaptureStatus.SIGNAL_PROGRESS -> R.string.capture_signal_progress
             me.timschneeberger.rootlessjamesdsp.utils.CaptureStatus.RESTRICTED -> R.string.capture_restricted
+            me.timschneeberger.rootlessjamesdsp.utils.CaptureStatus.DIRECT_EFFECTS -> R.string.direct_effects_status
+            me.timschneeberger.rootlessjamesdsp.utils.CaptureStatus.DIRECT_WAITING -> R.string.direct_waiting_status
             me.timschneeberger.rootlessjamesdsp.utils.CaptureStatus.DIRECT -> R.string.capture_direct
             else -> R.string.capture_checking
         }
@@ -272,7 +274,7 @@ object ServiceNotificationHelper: KoinComponent {
 
     fun createStopIntent(ctx: Context) =
         if (SdkCheck.isQ && isRootless()) {
-            with(Intent(ctx, RootlessAudioProcessorService::class.java)) {
+            with(Intent(ctx, me.timschneeberger.rootlessjamesdsp.service.DirectAudioProcessorService.selectedService(ctx))) {
                 action = RootlessAudioProcessorService.ACTION_STOP
                 this
             }
@@ -281,7 +283,7 @@ object ServiceNotificationHelper: KoinComponent {
 
     fun createStartIntent(ctx: Context, mediaProjectionData: Intent? = null) =
         if (SdkCheck.isQ && isRootless()) {
-            with(Intent(ctx, RootlessAudioProcessorService::class.java)) {
+            with(Intent(ctx, me.timschneeberger.rootlessjamesdsp.service.DirectAudioProcessorService.selectedService(ctx))) {
                 action = RootlessAudioProcessorService.ACTION_START
                 putExtra(RootlessAudioProcessorService.EXTRA_MEDIA_PROJECTION_DATA, mediaProjectionData)
                 this

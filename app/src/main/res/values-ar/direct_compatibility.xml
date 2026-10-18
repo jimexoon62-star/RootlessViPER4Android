@@ -1,0 +1,6 @@
+<resources>
+    <string name="direct_compatibility_title">توافق مباشر للجلسة (EQ ومستوى الخرج فقط)</string>
+    <string name="direct_compatibility_summary">يستخدم تأثير Android على الصوت الأصلي دون التقاط أو كتم. يعمل EQ الرسومي ومستوى الخرج فقط مع هامش تلقائي ومحدد ثابت؛ بقية تأثيرات ViPER لا تعمل في هذا الوضع. تغيير الوضع يوقف المعالجة؛ شغّل زر الطاقة مجددًا. عطّله لاستخدام محرك ViPER الكامل بالالتقاط.</string>
+    <string name="direct_effects_status">تم امتلاك تحكم EQ ومستوى الخرج؛ بقية تأثيرات ViPER غير نشطة</string>
+    <string name="direct_waiting_status">EQ مباشر: انتظار جلسة صوت تقبل التحكم</string>
+</resources>

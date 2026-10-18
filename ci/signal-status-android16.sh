@@ -78,3 +78,14 @@ adb push startup-evidence/probe-result.json /data/local/tmp/rv4a-probe.json
 adb shell am instrument -w -r -e class me.timschneeberger.rootlessjamesdsp.interop.CapturedSignalTest -e probeResultPath /data/local/tmp/rv4a-probe.json "$pkg.test/androidx.test.runner.AndroidJUnitRunner" | tee startup-evidence/captured-signal-instrumentation.txt
 grep -q 'OK (1 test)' startup-evidence/captured-signal-instrumentation.txt
 adb shell am force-stop org.rv4a.captureprobe
+
+# Public session effect on a self-owned source which opts out of MediaProjection.
+# Only the normal RECORD_AUDIO test permission is granted; no capture-policy override.
+adb shell pm grant "$pkg" android.permission.RECORD_AUDIO
+adb shell am instrument -w -r -e class me.timschneeberger.rootlessjamesdsp.interop.DirectSessionEffectTest "$pkg.test/androidx.test.runner.AndroidJUnitRunner" | tee startup-evidence/direct-session-instrumentation.txt
+grep -q 'OK (1 test)' startup-evidence/direct-session-instrumentation.txt
+adb logcat -d -s DirectSessionEffectTest:I > startup-evidence/direct-session-measurement.txt
+cat startup-evidence/direct-session-measurement.txt
+
+adb shell am instrument -w -r -e class me.timschneeberger.rootlessjamesdsp.interop.DirectServiceLifecycleTest "$pkg.test/androidx.test.runner.AndroidJUnitRunner" | tee startup-evidence/direct-lifecycle-instrumentation.txt
+grep -q 'OK (1 test)' startup-evidence/direct-lifecycle-instrumentation.txt

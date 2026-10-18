@@ -536,6 +536,10 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
     }
 
     private fun loadFromPreferences(key: String?){
+        if (key == DirectAudioProcessorService.MODE_KEY && DirectAudioProcessorService.enabled(this)) {
+            failOpen("Backend changed to direct compatibility", false)
+            return
+        }
         when (key) {
             getString(R.string.key_powersave_suspend) -> {
                 suspendOnIdle = preferences.get<Boolean>(R.string.key_powersave_suspend)
@@ -1001,7 +1005,8 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
 
         fun start(context: Context, data: Intent?) {
             try {
-                context.startForegroundService(ServiceNotificationHelper.createStartIntent(context, data))
+                if (BaseAudioProcessorService.activeServices == 0)
+                    context.startForegroundService(ServiceNotificationHelper.createStartIntent(context, data))
             }
             catch(ex: Exception) {
                 CrashlyticsImpl.recordException(ex)
@@ -1010,7 +1015,8 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
 
         fun stop(context: Context) {
             try {
-                context.startForegroundService(ServiceNotificationHelper.createStopIntent(context))
+                context.stopService(Intent(context, RootlessAudioProcessorService::class.java))
+                context.stopService(Intent(context, DirectAudioProcessorService::class.java))
             }
             catch(ex: Exception) {
                 CrashlyticsImpl.recordException(ex)

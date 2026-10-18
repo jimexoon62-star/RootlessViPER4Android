@@ -110,6 +110,7 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
 
     override fun onResume() {
         super.onResume()
+        applyDirectCompatibilityControls()
         if (arguments?.getInt(BUNDLE_XML_RES) != R.xml.dsp_output_control_preferences) return
         if (!me.timschneeberger.rootlessjamesdsp.utils.V4aIconColors.isClassicLayout(requireContext())) return
         val host = activity as? me.timschneeberger.rootlessjamesdsp.activity.MainActivity ?: return
@@ -119,6 +120,31 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
         // Keep following it: the service reports in after this point, so a
         // single read here would leave the switch showing the opposite.
         host.onPowerStateChanged = { on -> row.setValue(on) }
+    }
+
+    private val originalEnabled = mutableMapOf<Preference, Boolean>()
+    private fun applyDirectCompatibilityControls() {
+        val direct = me.timschneeberger.rootlessjamesdsp.utils.isRootless() &&
+            me.timschneeberger.rootlessjamesdsp.service.DirectAudioProcessorService.enabled(requireContext())
+        originalEnabled.forEach { (pref, enabled) -> pref.isEnabled = enabled }
+        if (!direct) return
+        val namespace = preferenceManager.sharedPreferencesName
+        fun visit(group: androidx.preference.PreferenceGroup) {
+            for (i in 0 until group.preferenceCount) {
+                val pref = group.getPreference(i)
+                if (pref is androidx.preference.PreferenceGroup) visit(pref)
+                else {
+                    originalEnabled.putIfAbsent(pref, pref.isEnabled)
+                    val allowed = when (namespace) {
+                        Constants.PREF_OUTPUT -> pref.key == getString(R.string.key_output_postgain)
+                        Constants.PREF_EQ -> pref.key in listOf(getString(R.string.key_eq_enable), getString(R.string.key_eq_bands))
+                        else -> false
+                    }
+                    if (!allowed) pref.isEnabled = false
+                }
+            }
+        }
+        visit(preferenceScreen)
     }
 
     override fun onPause() {
