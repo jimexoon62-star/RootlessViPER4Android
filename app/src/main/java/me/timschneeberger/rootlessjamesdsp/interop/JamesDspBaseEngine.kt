@@ -48,8 +48,8 @@ abstract class JamesDspBaseEngine(val context: Context, val callbacks: JamesDspW
     }
 
     /** For a pipeline that serializes configuration, processing and disposal on one worker. */
-    fun syncWithPreferencesBlocking(strict: Boolean = false) {
-        kotlinx.coroutines.runBlocking { syncWithPreferencesAsync(null, strict) }
+    fun syncWithPreferencesBlocking(strict: Boolean = false, forceUpdateNamespaces: Array<String>? = null) {
+        kotlinx.coroutines.runBlocking { syncWithPreferencesAsync(forceUpdateNamespaces, strict) }
     }
 
     fun clearCache() {

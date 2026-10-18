@@ -1,17 +1,28 @@
 #include <aaudio/AAudio.h>
 #include <jni.h>
+#include <android/log.h>
 #include <cmath>
 #include <cstdint>
 #include <memory>
 #include <mutex>
+#include <thread>
+#include <atomic>
+#include <condition_variable>
+#include <chrono>
 
 namespace {
 struct Tone {
     AAudioStream* stream = nullptr;
     int frequency;
-    int rate = 48000;
+    int rate = 44100;
     int channels = 2;
     uint64_t frame = 0;
+    bool recover = true;
+    int recoveryDelayMs = 0;
+    std::atomic<bool> stopping{false}, disconnected{false};
+    std::mutex wakeMutex;
+    std::condition_variable wake;
+    std::thread recovery;
 };
 std::mutex lifecycle;
 std::unique_ptr<Tone> tone;
@@ -24,54 +35,86 @@ aaudio_data_callback_result_t render(AAudioStream*, void* data, void* audio, int
     }
     return AAUDIO_CALLBACK_RESULT_CONTINUE;
 }
-void closeTone() {
-    if (!tone) return;
-    AAudioStream_requestStop(tone->stream);
-    // close waits for callbacks before the user-data object is destroyed.
-    AAudioStream_close(tone->stream);
-    tone.reset();
+void onError(AAudioStream*, void* data, aaudio_result_t error) {
+    auto& t = *static_cast<Tone*>(data);
+    __android_log_print(ANDROID_LOG_WARN,"DirectToneAAudio","AAUDIO_ERROR code=%d recover=%d",error,t.recover);
+    if (t.recover && !t.stopping.load() && error == AAUDIO_ERROR_DISCONNECTED) {
+        t.disconnected.store(true); t.wake.notify_one();
+    }
 }
+void closeStream(Tone& t) {
+    if (!t.stream) return;
+    AAudioStream_requestStop(t.stream);
+    AAudioStream_close(t.stream); // Waits for callbacks before user data can be freed.
+    t.stream = nullptr;
 }
-
-extern "C" JNIEXPORT jint JNICALL
-Java_org_rv4a_captureprobe_DirectToneActivity_startNative(JNIEnv*, jclass, jint frequency) {
-    std::lock_guard<std::mutex> guard(lifecycle);
-    if (tone || frequency < 100 || frequency > 10000) return AAUDIO_ERROR_INVALID_STATE;
+aaudio_result_t openStream(Tone& t) {
     AAudioStreamBuilder* builder = nullptr;
     auto result = AAudio_createStreamBuilder(&builder);
     if (result != AAUDIO_OK) return result;
-    auto next = std::make_unique<Tone>();
-    next->frequency = frequency;
     AAudioStreamBuilder_setDirection(builder, AAUDIO_DIRECTION_OUTPUT);
     AAudioStreamBuilder_setSharingMode(builder, AAUDIO_SHARING_MODE_SHARED);
     AAudioStreamBuilder_setPerformanceMode(builder, AAUDIO_PERFORMANCE_MODE_NONE);
     AAudioStreamBuilder_setUsage(builder, AAUDIO_USAGE_MEDIA);
     AAudioStreamBuilder_setContentType(builder, AAUDIO_CONTENT_TYPE_MUSIC);
     AAudioStreamBuilder_setAllowedCapturePolicy(builder, AAUDIO_ALLOW_CAPTURE_BY_SYSTEM);
-    // Match the Spotify source rate observed in the HONOR capture; the other
-    // fixture remains at 48 kHz. The callback uses the negotiated stream rate.
     AAudioStreamBuilder_setSampleRate(builder, 44100);
     AAudioStreamBuilder_setChannelCount(builder, 2);
     AAudioStreamBuilder_setFormat(builder, AAUDIO_FORMAT_PCM_FLOAT);
     AAudioStreamBuilder_setSessionId(builder, AAUDIO_SESSION_ID_ALLOCATE);
-    AAudioStreamBuilder_setDataCallback(builder, render, next.get());
-    result = AAudioStreamBuilder_openStream(builder, &next->stream);
+    AAudioStreamBuilder_setDataCallback(builder, render, &t);
+    AAudioStreamBuilder_setErrorCallback(builder, onError, &t);
+    result = AAudioStreamBuilder_openStream(builder, &t.stream);
     AAudioStreamBuilder_delete(builder);
     if (result != AAUDIO_OK) return result;
-    next->rate = AAudioStream_getSampleRate(next->stream);
-    next->channels = AAudioStream_getChannelCount(next->stream);
-    if (AAudioStream_getFormat(next->stream) != AAUDIO_FORMAT_PCM_FLOAT || next->channels != 2 || next->rate <= 0) {
-        AAudioStream_close(next->stream);
-        return AAUDIO_ERROR_INVALID_FORMAT;
+    t.rate = AAudioStream_getSampleRate(t.stream);
+    t.channels = AAudioStream_getChannelCount(t.stream);
+    if (AAudioStream_getFormat(t.stream) != AAUDIO_FORMAT_PCM_FLOAT || t.channels != 2 || t.rate <= 0) {
+        closeStream(t); return AAUDIO_ERROR_INVALID_FORMAT;
     }
-    tone = std::move(next);
-    result = AAudioStream_requestStart(tone->stream);
-    if (result != AAUDIO_OK) closeTone();
+    result = AAudioStream_requestStart(t.stream);
+    if (result != AAUDIO_OK) closeStream(t);
     return result;
 }
-
+void recoverStream(Tone* t) {
+    while (!t->stopping.load()) {
+        std::unique_lock<std::mutex> lock(t->wakeMutex);
+        t->wake.wait(lock,[&]{return t->stopping.load() || t->disconnected.load();});
+        if (t->stopping.load()) break;
+        t->disconnected.store(false);
+        if (t->wake.wait_for(lock,std::chrono::milliseconds(t->recoveryDelayMs),[&]{return t->stopping.load();})) break;
+        lock.unlock();
+        // AAudio requires close/reopen on a DIFFERENT thread, never in its error callback.
+        closeStream(*t);
+        for (int attempt=0; attempt<3 && !t->stopping.load(); ++attempt) {
+            auto result=openStream(*t);
+            if (result==AAUDIO_OK) { __android_log_print(ANDROID_LOG_INFO,"DirectToneAAudio","AAUDIO_REOPENED rate=%d",t->rate); break; }
+            std::unique_lock<std::mutex> wait(t->wakeMutex);
+            t->wake.wait_for(wait,std::chrono::milliseconds(100*(attempt+1)),[&]{return t->stopping.load();});
+        }
+    }
+}
+void stopTone(std::unique_ptr<Tone> old) {
+    if (!old) return;
+    old->stopping.store(true); old->wake.notify_all();
+    if (old->recovery.joinable()) old->recovery.join();
+    closeStream(*old);
+}
+}
+extern "C" JNIEXPORT jint JNICALL
+Java_org_rv4a_captureprobe_DirectToneActivity_startNative(JNIEnv*, jclass, jint frequency, jboolean recover, jint delay) {
+    std::lock_guard<std::mutex> guard(lifecycle);
+    if (tone || frequency < 100 || frequency > 10000 || delay<0 || delay>3000) return AAUDIO_ERROR_INVALID_STATE;
+    auto next=std::make_unique<Tone>(); next->frequency=frequency; next->recover=recover; next->recoveryDelayMs=delay;
+    auto result=openStream(*next);
+    if (result!=AAUDIO_OK) return result;
+    tone=std::move(next);
+    if (tone->recover) tone->recovery=std::thread(recoverStream,tone.get());
+    return AAUDIO_OK;
+}
 extern "C" JNIEXPORT void JNICALL
 Java_org_rv4a_captureprobe_DirectToneActivity_stopNative(JNIEnv*, jclass) {
-    std::lock_guard<std::mutex> guard(lifecycle);
-    closeTone();
+    std::unique_ptr<Tone> old;
+    { std::lock_guard<std::mutex> guard(lifecycle); old=std::move(tone); }
+    stopTone(std::move(old));
 }

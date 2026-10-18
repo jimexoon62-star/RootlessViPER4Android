@@ -36,11 +36,13 @@ class ShellAudioProcessorService : BaseAudioProcessorService() {
     private var manager: BaseSessionManager? = null
     private var dump: ISessionInfoDump? = null
     private val settingsRevision = AtomicLong()
+    private val forcedSettings = AtomicInteger()
     private var initialized = false
     @Volatile private var disposing = false
     private var cleaned = false
     private var selected = emptySet<Int>()
     private var sourceOwners = emptySet<Pair<Int, Int>>()
+    private val rearmGate = SourceRearmGate()
     private var failures = 0
     private var serial = 0L
     @Volatile private var generation: Generation? = null
@@ -56,6 +58,8 @@ class ShellAudioProcessorService : BaseAudioProcessorService() {
         @Volatile var ready = false
         @Volatile var connecting = false
         @Volatile var monitoring = true
+        @Volatile var fullRouteStartedAt = 0L
+        @Volatile var awaitingSourceReopen = false
         @Volatile var framesIn = 0L
         @Volatile var framesOut = 0L
         var head = -1L
@@ -72,12 +76,22 @@ class ShellAudioProcessorService : BaseAudioProcessorService() {
     }
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
+            val force = when (intent?.action) {
+                Constants.ACTION_SERVICE_RELOAD_LIVEPROG -> 1
+                Constants.ACTION_SAMPLE_RATE_UPDATED -> 2
+                else -> 0
+            }
+            if (force != 0) forcedSettings.getAndUpdate { it or force }
             settingsRevision.incrementAndGet()
             if (intent?.action == Constants.ACTION_SERVICE_HARD_REBOOT_CORE || intent?.action == Constants.ACTION_SERVICE_SOFT_REBOOT_CORE) restart("requested engine restart", true)
         }
     }
     private val routes = object : AudioDeviceCallback() {
-        override fun onAudioDevicesAdded(devices: Array<out AudioDeviceInfo>) = changed(devices)
+        private var initialEnumeration = true
+        override fun onAudioDevicesAdded(devices: Array<out AudioDeviceInfo>) {
+            if (initialEnumeration) { initialEnumeration = false; return }
+            changed(devices)
+        }
         override fun onAudioDevicesRemoved(devices: Array<out AudioDeviceInfo>) = changed(devices)
         private fun changed(devices: Array<out AudioDeviceInfo>) {
             if (devices.any { it.isSink && it.type != AudioDeviceInfo.TYPE_REMOTE_SUBMIX }) {
@@ -123,7 +137,7 @@ class ShellAudioProcessorService : BaseAudioProcessorService() {
                             g.underruns = total; g.underrunAt = now
                             if (g.starvationWindows >= 3) throw IOException("Persistent output starvation")
                         }
-                        if (failures > 0 && now - g.headAt < 500 && g.framesOut >= g.rate * 30L) failures = 0
+                        if (failures > 0 && now - g.headAt < 500 && g.framesOut >= g.rate * 30L) { failures = 0; rearmGate.confirmedHealthy() }
                     } catch (e: Exception) { fail(g, e.message ?: "Output health failure") }
                 }
             }
@@ -164,19 +178,30 @@ class ShellAudioProcessorService : BaseAudioProcessorService() {
         if (intent?.action == RootlessAudioProcessorService.ACTION_STOP) requestStop()
         return START_NOT_STICKY
     }
+    private val deferredReconcile = Runnable { reconcile() }
     private fun reconcile() {
         if (!initialized || disposing) return
+        handler.removeCallbacks(deferredReconcile)
         val allowlist = prefs.getBoolean(getString(R.string.key_blocklist_allowlist_mode), false)
         val next = ShellRouteSelection.select(dump?.sessions?.values.orEmpty(), android.os.Process.myUid(), packageName, blocked, allowlist)
+        val current = generation
+        val sourceActuallyAbsent = dump?.sessions?.values.orEmpty().none { it.uid in selected }
+        if (next.isEmpty() && selected.isNotEmpty() && sourceActuallyAbsent && current != null && current.awaitingSourceReopen) {
+            val remaining = 2000 - (SystemClock.elapsedRealtime() - current.fullRouteStartedAt)
+            if (remaining > 0) { handler.postDelayed(deferredReconcile, remaining); return }
+            fail(current, "source did not reopen after primary routing changed")
+        }
+        if (rearmGate.observe(next)) failures = 0
         val owners = dump?.sessions.orEmpty().filterValues { it.uid in next && it.isUsageRecordable() }
             .map { it.key to it.value.uid }.toSet()
         val newSourceIdentity = owners != sourceOwners
         sourceOwners = owners
         if (next != selected) {
-            retire(generation); selected = next.toSet(); failures = 0
+            retire(generation); selected = next.toSet()
+            if (newSourceIdentity && failures > 2 && rearmGate.newSession()) failures = 0
             publish(CaptureStatus.CHECKING)
             scheduleStart(0)
-        } else if (newSourceIdentity && generation == null && failures > 2) {
+        } else if (newSourceIdentity && generation == null && failures > 2 && rearmGate.newSession()) {
             // A new player/session is new recovery evidence, not another retry loop
             // caused by our own capture/output callbacks on the same owner UID.
             failures = 0
@@ -230,6 +255,7 @@ class ShellAudioProcessorService : BaseAudioProcessorService() {
                     activeFrames = if (signal) activeFrames + n else 0
                     if (activeFrames >= 1280) {
                         source.close(); g.ready = false; g.lastWrite = SystemClock.elapsedRealtime()
+                        g.fullRouteStartedAt = SystemClock.elapsedRealtime(); g.awaitingSourceReopen = true
                         source = openSource(this, g.rate, uids, false)
                         synchronized(g) { if (!g.closed.get()) g.source = source }
                         if (g.closed.get()) { source.close(); break }
@@ -241,7 +267,13 @@ class ShellAudioProcessorService : BaseAudioProcessorService() {
                 }
                 g.framesIn += n / 2
                 val newRevision = settingsRevision.get()
-                if (newRevision != revision) { engine.syncWithPreferencesBlocking(true); revision = newRevision }
+                if (newRevision != revision) {
+                    val force = forcedSettings.getAndSet(0)
+                    val namespaces = mutableListOf<String>()
+                    if (force and 1 != 0) namespaces.addAll(listOf(Constants.PREF_LIVEPROG, Constants.PREF_LIVEPROG2, Constants.PREF_LIVEPROG3, Constants.PREF_LIVEPROG4))
+                    if (force and 2 != 0) namespaces.add(Constants.PREF_CONVOLVER)
+                    engine.syncWithPreferencesBlocking(true, namespaces.toTypedArray()); revision = newRevision
+                }
                 beforeProcess?.invoke()
                 engine.processInt16(input, output, 0, n)
                 if (g.closed.get()) break
@@ -249,9 +281,11 @@ class ShellAudioProcessorService : BaseAudioProcessorService() {
                 val outputQuiet = (0 until n).all { kotlin.math.abs(output[it].toInt()) <= 2 }
                 silentInputFrames = if (inputQuiet) silentInputFrames + n / 2 else 0
                 quietFrames = if (inputQuiet && outputQuiet) quietFrames + n / 2 else 0
-                if (quietFrames >= g.rate / 2 || silentInputFrames >= g.rate * 20) {
+                if (quietFrames >= (if (g.awaitingSourceReopen) g.rate * 2 else g.rate / 2) || silentInputFrames >= g.rate * 20) {
                     // Quiet is a bypass state, not a failure. A low-fidelity COPY monitor
                     // detects return of source audio; its samples NEVER enter the DSP.
+                    if (g.awaitingSourceReopen) Timber.w("FULL_INPUT_UNCONFIRMED: releasing primary routing; source may need to reopen its AAudio stream")
+                    g.awaitingSourceReopen = false; g.fullRouteStartedAt = 0
                     source.close(); g.ready = false; g.lastWrite = SystemClock.elapsedRealtime()
                     track.pause(); track.flush(); track.play()
                     source = openSource(this, 16000, uids, true)
@@ -263,7 +297,7 @@ class ShellAudioProcessorService : BaseAudioProcessorService() {
                     handler.post { if (generation === g) publish(CaptureStatus.CHECKING) }
                     continue
                 }
-                if (!inputQuiet) unsuccessfulProbes = 0
+                if (!inputQuiet) { unsuccessfulProbes = 0; g.awaitingSourceReopen = false }
                 var offset = 0
                 var progressAt = SystemClock.elapsedRealtime()
                 while (offset < n && !g.closed.get()) {

@@ -6,7 +6,7 @@ trap 'adb logcat -b all -d > full-shell-evidence/logcat.txt; adb shell dumpsys m
 adb install test-fixtures/full-shell/previous-app.apk
 adb install -r test-fixtures/full-shell/app.apk
 adb install -t test-fixtures/full-shell/instrumentation.apk
-adb install -t test-fixtures/shell-capture/source.apk
+adb install -t test-fixtures/full-shell/source.apk
 adb install /tmp/shizuku.apk
 unzip -p /tmp/shizuku.apk lib/x86_64/libshizuku.so > /tmp/shizuku_starter
 adb push /tmp/shizuku_starter /data/local/tmp/shizuku_starter

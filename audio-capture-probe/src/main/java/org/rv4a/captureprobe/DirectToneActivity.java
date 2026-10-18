@@ -13,7 +13,7 @@ public class DirectToneActivity extends Activity {
     private AudioTrack track;
     private boolean nativeTone;
     private final Handler handler=new Handler(Looper.getMainLooper());
-    private static native int startNative(int frequency);
+    private static native int startNative(int frequency, boolean recover, int delay);
     private static native void stopNative();
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state);
@@ -22,7 +22,7 @@ public class DirectToneActivity extends Activity {
         setContentView(label);
         if(getIntent().getBooleanExtra("aaudio",false)) {
             System.loadLibrary("direct_tone");
-            int result=startNative(getIntent().getIntExtra("frequency",997));
+            int result=startNative(getIntent().getIntExtra("frequency",997),getIntent().getBooleanExtra("aaudio_recover",true),getIntent().getIntExtra("aaudio_recovery_delay",0));
             if(result!=0) throw new IllegalStateException("AAudio source start failed: "+result);
             nativeTone=true;
             handler.postDelayed(this::finish,90000);

@@ -99,7 +99,7 @@ class FullShellEngineTest {
                     throw java.io.IOException("Injected DSP processing exception")
                 }
             }
-            shell("am start -W -n org.rv4a.captureprobe/.DirectToneActivity"+(if(aaudio)" --ez aaudio true" else ""))
+            shell("am start -W -n org.rv4a.captureprobe/.DirectToneActivity"+(if(aaudio)" --ez aaudio true --ei aaudio_recovery_delay 800" else ""))
             m=meter(); var baseline=rms(m)
             val deadline=SystemClock.elapsedRealtime()+10000
             while(baseline<= -7000 && SystemClock.elapsedRealtime()<deadline) baseline=rms(m)
