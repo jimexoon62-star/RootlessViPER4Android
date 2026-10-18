@@ -1,0 +1,1 @@
+Frozen source: 777e121. APKs built with the supported Gradle toolchain, injected ABI x86_64 and testOnly=false for the application. Instrumentation includes real Android public effects and service lifecycle tests. These fixtures contain no owner diagnostics. GPL-3.0 source is preserved in the parent history.
