@@ -46,7 +46,17 @@ public final class ShellCaptureProbe {
             System.out.println("register=" + result + " routeFlags=" + flags);
             if (result != 0) throw new IllegalStateException("Policy rejected");
             registered = true;
-            record = (AudioRecord) call(policy, "createAudioRecordSink", new Class[]{mixType}, mix);
+            // The policy helper omits Context and attributes an app_process recorder to
+            // package android. Supply the real shell Context, retaining UID 2000.
+            AudioAttributes.Builder attributes = new AudioAttributes.Builder();
+            call(attributes, "setInternalCapturePreset", new Class[]{int.class}, 8);
+            call(attributes, "addTag", new Class[]{String.class}, "addr=" + call(mix, "getRegistration", new Class[]{}));
+            AudioRecord.Builder recorderBuilder = new AudioRecord.Builder();
+            call(recorderBuilder, "setContext", new Class[]{Context.class}, context);
+            call(recorderBuilder, "setAudioAttributes", new Class[]{AudioAttributes.class}, attributes.build());
+            recorderBuilder.setAudioFormat(new AudioFormat.Builder(format).setChannelMask(AudioFormat.CHANNEL_IN_STEREO).build());
+            recorderBuilder.setBufferSizeInBytes(19200);
+            record = recorderBuilder.build();
             if (record == null || record.getState() != AudioRecord.STATE_INITIALIZED) throw new IllegalStateException("Recorder unavailable");
             record.startRecording();
             short[] samples = new short[1920];
@@ -72,8 +82,14 @@ public final class ShellCaptureProbe {
             if (flags == 2 && !signal) throw new AssertionError("Full-quality routing proof failed");
             if (flags == 3 && signal) throw new AssertionError("Opt-out negative control unexpectedly captured");
         } finally {
-            if (record != null) { try { record.stop(); } finally { record.release(); } }
-            if (registered) call(manager, "unregisterAudioPolicy", new Class[]{policyType}, policy);
+            try {
+                if (record != null) {
+                    try { if (record.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) record.stop(); }
+                    finally { record.release(); }
+                }
+            } finally {
+                if (registered) call(manager, "unregisterAudioPolicy", new Class[]{policyType}, policy);
+            }
             System.out.println("CLEANUP complete");
         }
     }
