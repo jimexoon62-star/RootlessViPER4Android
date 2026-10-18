@@ -69,7 +69,10 @@ class DirectSessionEffectTest {
                 }
                 return values.sorted()[values.size/2]
             }
-            val baseline=rms(); assertTrue("baseline is silent: $baseline",baseline > -4000)
+            // The output mix includes the device media-volume curve. The
+            // Visualizer floor is -9600 mB; leave 26 dB above it before the
+            // attenuation step rather than misclassifying quiet output as zero.
+            val baseline=rms(); assertTrue("baseline below reliable meter range: $baseline",baseline > -7000)
             effect.update(DirectEffectSettings.parse(false,null,-12f))
             val reduced=rms()
             assertTrue("expected -12dB, baseline=$baseline reduced=$reduced", reduced-baseline in -1500..-900)
