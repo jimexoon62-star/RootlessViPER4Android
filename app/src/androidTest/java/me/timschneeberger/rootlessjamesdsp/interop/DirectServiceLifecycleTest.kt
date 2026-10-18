@@ -76,6 +76,22 @@ class DirectServiceLifecycleTest {
             onMain { RootlessAudioProcessorService.start(context,null) }; awaitCount(1)
             onMain { prefs.edit().putBoolean(DirectAudioProcessorService.MODE_KEY,false).commit() }
             awaitCount(0)
+            onMain {
+                var restored=0
+                fun inspect(fragment: androidx.fragment.app.Fragment) {
+                    if (fragment is me.timschneeberger.rootlessjamesdsp.fragment.PreferenceGroupFragment &&
+                        fragment.preferenceManager.sharedPreferencesName==Constants.PREF_COMPANDER) {
+                        fragment.javaClass.getDeclaredMethod("applyDirectCompatibilityControls").apply { isAccessible=true }.invoke(fragment)
+                        val group=fragment.preferenceScreen.getPreference(0) as androidx.preference.PreferenceGroup
+                        assertTrue("full-engine header was not restored",group.isEnabled)
+                        assertTrue("full-engine child was not restored",group.getPreference(0).isEnabled)
+                        restored++
+                    }
+                    fragment.childFragmentManager.fragments.forEach(::inspect)
+                }
+                activity.supportFragmentManager.fragments.forEach(::inspect)
+                assertTrue("no full-engine controls restored",restored>0)
+            }
         } finally {
             onMain {
                 RootlessAudioProcessorService.stop(context)

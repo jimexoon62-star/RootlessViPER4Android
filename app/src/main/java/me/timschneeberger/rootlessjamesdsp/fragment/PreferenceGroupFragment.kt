@@ -134,8 +134,10 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
                 val pref = group.getPreference(i)
                 if (pref is androidx.preference.PreferenceGroup) {
                     originalEnabled.putIfAbsent(pref, pref.isEnabled)
-                    if (namespace != Constants.PREF_OUTPUT && namespace != Constants.PREF_EQ) pref.isEnabled = false
+                    // Remember child states before disabling their parent, whose
+                    // effective disabled state would otherwise poison restoration.
                     visit(pref)
+                    if (namespace != Constants.PREF_OUTPUT && namespace != Constants.PREF_EQ) pref.isEnabled = false
                 }
                 else {
                     originalEnabled.putIfAbsent(pref, pref.isEnabled)
