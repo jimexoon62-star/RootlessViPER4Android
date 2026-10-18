@@ -25,11 +25,13 @@ public class DirectToneActivity extends Activity {
         writer = new Thread(() -> {
             try {
                 track.play();
+                int frequency=getIntent().getIntExtra("frequency",997);
+                if(frequency<100 || frequency>10000) throw new IllegalArgumentException("frequency");
                 long frame=0, progress=SystemClock.elapsedRealtime(), deadline=progress+90000;
                 float[] pcm=new float[960];
                 while(!stopped.get() && SystemClock.elapsedRealtime()<deadline) {
                     for(int i=0;i<pcm.length;i+=2) {
-                        float v=(float)(.2*Math.sin(2*Math.PI*997*frame++/48000));
+                        float v=(float)(.2*Math.sin(2*Math.PI*frequency*frame++/48000));
                         pcm[i]=v; pcm[i+1]=v;
                     }
                     int offset=0;

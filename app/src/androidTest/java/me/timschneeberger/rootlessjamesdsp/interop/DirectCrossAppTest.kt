@@ -17,7 +17,9 @@ import org.junit.Test
 /** Disposable emulator only. Measures the real service processing a different UID;
  * never feeds a discovered session ID directly into an effect constructor. */
 class DirectCrossAppTest {
-    @Test fun serviceDiscoversOptedOutOtherAppAndAppliesGain() {
+    @Test fun audioServiceDiscoveryProcessesTwoOptedOutApps() = measure("1")
+    @Test fun audioPolicyDiscoveryProcessesTwoOptedOutApps() = measure("0")
+    private fun measure(method:String) {
         val instrumentation=InstrumentationRegistry.getInstrumentation()
         val context=instrumentation.targetContext
         fun main(action:()->Unit)=instrumentation.runOnMainSync(action)
@@ -43,7 +45,7 @@ class DirectCrossAppTest {
             main {
                 RootlessAudioProcessorService.stop(context)
                 app.edit().putBoolean(DirectAudioProcessorService.MODE_KEY,true)
-                    .putString(context.getString(R.string.key_session_detection_method),"1").commit()
+                    .putString(context.getString(R.string.key_session_detection_method),method).commit()
                 output.edit().putFloat(context.getString(R.string.key_output_postgain),0f).commit()
                 eq.edit().putBoolean(context.getString(R.string.key_eq_enable),false).commit()
             }
@@ -51,6 +53,11 @@ class DirectCrossAppTest {
             assertFalse(launch,launch.contains("Error"))
             val probeUid=context.packageManager.getApplicationInfo("org.rv4a.captureprobe",0).uid
             assertNotEquals("fixture must be another UID",android.os.Process.myUid(),probeUid)
+            val secondUid=context.packageManager.getApplicationInfo("org.rv4a.captureprobe.second",0).uid
+            assertNotEquals("fixtures must have distinct UIDs",probeUid,secondUid)
+            assertNotEquals(android.os.Process.myUid(),secondUid)
+            val secondLaunch=shell("am start -W -n org.rv4a.captureprobe.second/org.rv4a.captureprobe.DirectToneActivity --ei frequency 1499")
+            assertFalse(secondLaunch,secondLaunch.contains("Error"))
             val m=Visualizer(0); meter=m
             assertEquals(Visualizer.SUCCESS,m.setScalingMode(Visualizer.SCALING_MODE_AS_PLAYED))
             assertEquals(Visualizer.SUCCESS,m.setMeasurementMode(Visualizer.MEASUREMENT_MODE_PEAK_RMS))
@@ -82,11 +89,12 @@ class DirectCrossAppTest {
             main { RootlessAudioProcessorService.stop(context) }
             val restored=rms()
             assertTrue("service stop failed to restore source: $baseline -> $restored",kotlin.math.abs(restored-baseline)<250)
-            android.util.Log.i("DirectCrossAppTest","CROSS_APP_MEASUREMENT baseline_mB=$baseline reduced_mB=$reduced restored_mB=$restored separateUid=true capturePolicy=SYSTEM_ONLY")
+            android.util.Log.i("DirectCrossAppTest","CROSS_APP_MEASUREMENT method=$method baseline_mB=$baseline reduced_mB=$reduced restored_mB=$restored separateApps=2 capturePolicy=SYSTEM_ONLY")
         } finally {
             main { RootlessAudioProcessorService.stop(context) }
             meter?.release()
             shell("am force-stop org.rv4a.captureprobe")
+            shell("am force-stop org.rv4a.captureprobe.second")
             main { restore(app,oldApp); restore(output,oldOutput); restore(eq,oldEq) }
         }
     }
