@@ -127,12 +127,10 @@ class DirectCrossAppTest {
                     SystemClock.sleep(60); value.mRms
                 }.sorted()[4]
             }
-            val singleSource=rms(); assertTrue("single source baseline=$singleSource",singleSource> -7000)
-            val baseline=if(player==null) {
-                val secondLaunch=shell("am start -W -n org.rv4a.captureprobe.second/org.rv4a.captureprobe.DirectToneActivity --ei frequency 1499 --ez aaudio true")
-                assertFalse(secondLaunch,secondLaunch.contains("Error"))
-                rms().also { assertTrue("AAudio source must contribute real signal: $singleSource -> $it",it-singleSource in 200..400) }
-            } else singleSource
+            var singleSource=rms()
+            val sourceDeadline=SystemClock.elapsedRealtime()+10000
+            while(singleSource<= -7000 && SystemClock.elapsedRealtime()<sourceDeadline) singleSource=rms()
+            assertTrue("source did not start before ViPER: baseline=$singleSource",singleSource> -7000)
             main { RootlessAudioProcessorService.start(context,null) }
             val deadline=SystemClock.elapsedRealtime()+10000
             var controlled=false
@@ -142,6 +140,13 @@ class DirectCrossAppTest {
                 SystemClock.sleep(100)
             }
             assertTrue("real service did not discover/control separate opted-out source",controlled)
+            // The second app starts while processing is already running. No
+            // manual poll, service toggle or injected session ID may attach it.
+            val baseline=if(player==null) {
+                val secondLaunch=shell("am start -W -n org.rv4a.captureprobe.second/org.rv4a.captureprobe.DirectToneActivity --ei frequency 1499 --ez aaudio true")
+                assertFalse(secondLaunch,secondLaunch.contains("Error"))
+                rms().also { assertTrue("AAudio source must contribute real signal: $singleSource -> $it",it-singleSource in 200..400) }
+            } else singleSource
             main {
                 output.edit().putFloat(context.getString(R.string.key_output_postgain),-12f).commit()
                 context.sendLocalBroadcast(Intent(Constants.ACTION_PREFERENCES_UPDATED))
