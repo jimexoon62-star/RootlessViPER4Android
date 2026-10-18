@@ -65,7 +65,7 @@ class DirectServiceLifecycleTest {
                 }
                 override fun onServiceDisconnected(name:android.content.ComponentName) {}
             }
-            onMain { assertTrue(context.bindService(Intent(context,DirectAudioProcessorService::class.java),connection,0)) }
+            onMain { assertTrue(context.bindService(Intent(context,DirectAudioProcessorService::class.java),connection,android.content.Context.BIND_AUTO_CREATE)) }
             assertTrue(bound.await(5,java.util.concurrent.TimeUnit.SECONDS))
             try {
                 onMain { RootlessAudioProcessorService.stop(context) }
