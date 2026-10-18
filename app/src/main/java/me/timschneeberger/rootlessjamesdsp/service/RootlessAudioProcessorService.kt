@@ -185,7 +185,7 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
             if (isServiceDisposing) return@post
             if (recoverable && !terminalFailure.get() && mediaProjection != null && recoveryBudget.take()) {
                 try { stopRecording() }
-                catch (ex: Exception) { Timber.e(ex, "Recovery teardown failed"); stopSelf(); return@post }
+                catch (ex: Exception) { Timber.e(ex, "Recovery teardown failed"); stopAndDetachUi(); return@post }
                 // Direct playback remains unmuted throughout the backoff.
                 pipelineIdle = true
                 mainHandler.postDelayed({
@@ -195,10 +195,7 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
                         startRecording()
                     }
                 }, 500L)
-            } else {
-                sendLocalBroadcast(Intent(Constants.ACTION_SERVICE_STOPPED))
-                stopSelf()
-            }
+            } else stopAndDetachUi()
         }
     }
 
@@ -208,6 +205,10 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
             return
         }
         failOpen("Explicit processing stop", false)
+        stopAndDetachUi()
+    }
+
+    private fun stopAndDetachUi() {
         sendLocalBroadcast(Intent(Constants.ACTION_SERVICE_STOPPED))
         stopSelf()
     }
@@ -385,7 +386,7 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
             sendLocalBroadcast(Intent(Constants.ACTION_SERVICE_STARTED))
         } else {
             Timber.w("Failed to capture audio")
-            stopSelf()
+            stopAndDetachUi()
         }
 
         return START_NOT_STICKY
@@ -630,7 +631,8 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
             failOpen("initial audio record/track creation failed")
             Timber.e("Failed to create initial audio record/track")
             Timber.e(ex)
-            stopSelf()
+            // failOpen owns the bounded retry/terminal teardown; do not
+            // cancel its backoff by stopping the service here.
             return
         }
 

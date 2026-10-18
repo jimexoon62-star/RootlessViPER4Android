@@ -50,7 +50,11 @@ class DirectSessionEffectTest {
         var visualizer: Visualizer?=null
         try {
             track.play(); writer.start()
-            val meter=Visualizer(track.audioSessionId); visualizer=meter
+            // AOSP session Visualizer is INSERT_FIRST and DynamicsProcessing
+            // INSERT_LAST: a session meter observes pre-DSP samples. Observe
+            // the output mix AFTER our session insert, on this disposable
+            // synthetic-only emulator. This is test code, never production.
+            val meter=Visualizer(0); visualizer=meter
             assertEquals(Visualizer.SUCCESS,meter.setScalingMode(Visualizer.SCALING_MODE_AS_PLAYED))
             assertEquals(Visualizer.SUCCESS,meter.setMeasurementMode(Visualizer.MEASUREMENT_MODE_PEAK_RMS))
             assertEquals(Visualizer.SUCCESS,meter.setEnabled(true))
