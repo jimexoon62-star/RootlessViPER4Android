@@ -1,0 +1,11 @@
+device,Android,route,test,status,observed_audio,recovery_ms,notes
+HONOR BRP-NX1,16,soundcore R50i / speaker,60-minute Spotify playback,NOT EXECUTED,,,Owner-assisted physical validation pending
+HONOR BRP-NX1,16,soundcore R50i / speaker,Skip and seek,NOT EXECUTED,,,Owner-assisted physical validation pending
+HONOR BRP-NX1,16,soundcore R50i / speaker,Pause and resume,NOT EXECUTED,,,Owner-assisted physical validation pending
+HONOR BRP-NX1,16,soundcore R50i / speaker,Lock and unlock,NOT EXECUTED,,,Owner-assisted physical validation pending
+HONOR BRP-NX1,16,soundcore R50i / speaker,Background playback,NOT EXECUTED,,,Owner-assisted physical validation pending
+HONOR BRP-NX1,16,soundcore R50i / speaker,Bluetooth disconnect and reconnect,NOT EXECUTED,,,Owner-assisted physical validation pending
+HONOR BRP-NX1,16,soundcore R50i / speaker,Speaker and Bluetooth switching,NOT EXECUTED,,,Owner-assisted physical validation pending
+HONOR BRP-NX1,16,soundcore R50i / speaker,Repeated DSP enable and disable,NOT EXECUTED,,,Owner-assisted physical validation pending
+HONOR BRP-NX1,16,soundcore R50i / speaker,Force-stop processing service,NOT EXECUTED,,,Owner-assisted physical validation pending
+HONOR BRP-NX1,16,soundcore R50i / speaker,Session or capture failure recovery,NOT EXECUTED,,,Owner-assisted physical validation pending

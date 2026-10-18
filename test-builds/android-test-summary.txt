@@ -1,0 +1,10 @@
+Android 16 frozen-binary validation: PASS
+Run: https://github.com/jimexoon62-star/RootlessViPER4Android/actions/runs/39098065762
+Production source: 777e121; instrumentation: dcf14fd; QA: ef5dabf
+Actual baseline -> candidate update installation: PASS
+NativeAudioRecoveryTest: OK (5 tests)
+DirectSessionEffectTest: OK (1 test)
+DirectServiceLifecycleTest: OK (1 test), RECORD_AUDIO revoked
+Measured baseline_mB=-4953 reduced_mB=-6153 equalized_mB=-6153 restored_mB=-4951 capturePolicy=SYSTEM_ONLY
+Crash-buffer fatal check: PASS
+x86_64 emulator only; physical HONOR/ARM64/Bluetooth acceptance: NOT EXECUTED
