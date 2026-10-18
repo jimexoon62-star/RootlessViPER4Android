@@ -326,6 +326,12 @@ class RootlessAudioProcessorService : BaseAudioProcessorService() {
                 Timber.wtf("onStartCommand: intent.action is null")
             }
             ACTION_START -> {
+                // A queued start can outlive the backend selection which created it.
+                // No projection/capture or muting may start for a retired selection.
+                if (DirectAudioProcessorService.enabled(this) || BaseAudioProcessorService.activeServices > 1) {
+                    failOpen("Queued capture start no longer owns the selected backend", false)
+                    return START_NOT_STICKY
+                }
                 Timber.d("Starting service")
             }
             ACTION_STOP -> {

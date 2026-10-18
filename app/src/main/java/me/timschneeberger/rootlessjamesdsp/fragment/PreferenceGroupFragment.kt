@@ -132,7 +132,11 @@ class PreferenceGroupFragment : PreferenceFragmentCompat(), KoinComponent {
         fun visit(group: androidx.preference.PreferenceGroup) {
             for (i in 0 until group.preferenceCount) {
                 val pref = group.getPreference(i)
-                if (pref is androidx.preference.PreferenceGroup) visit(pref)
+                if (pref is androidx.preference.PreferenceGroup) {
+                    originalEnabled.putIfAbsent(pref, pref.isEnabled)
+                    if (namespace != Constants.PREF_OUTPUT && namespace != Constants.PREF_EQ) pref.isEnabled = false
+                    visit(pref)
+                }
                 else {
                     originalEnabled.putIfAbsent(pref, pref.isEnabled)
                     val allowed = when (namespace) {
