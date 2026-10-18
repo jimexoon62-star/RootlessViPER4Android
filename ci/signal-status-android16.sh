@@ -87,5 +87,6 @@ grep -q 'OK (1 test)' startup-evidence/direct-session-instrumentation.txt
 adb logcat -d -s DirectSessionEffectTest:I > startup-evidence/direct-session-measurement.txt
 cat startup-evidence/direct-session-measurement.txt
 
+adb shell pm grant "$pkg" android.permission.DUMP
 adb shell am instrument -w -r -e class me.timschneeberger.rootlessjamesdsp.interop.DirectServiceLifecycleTest "$pkg.test/androidx.test.runner.AndroidJUnitRunner" | tee startup-evidence/direct-lifecycle-instrumentation.txt
 grep -q 'OK (1 test)' startup-evidence/direct-lifecycle-instrumentation.txt
