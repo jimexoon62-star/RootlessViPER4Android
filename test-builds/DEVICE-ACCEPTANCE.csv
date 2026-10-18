@@ -1,0 +1,12 @@
+device,version,route,test,status,observed_audio,recovery_ms,notes
+HONOR BRP-NX1,installed 4.0.7 discussion,unspecified,Effects in other unspecified applications,OWNER REPORTED,Effect heard,,App names/backend/settings not specified; not a 4.0.8 result
+HONOR BRP-NX1,4.0.8,soundcore R50i / speaker,60-minute Spotify playback,NOT EXECUTED,,,Physical acceptance pending
+HONOR BRP-NX1,4.0.8,soundcore R50i / speaker,Skip and seek,NOT EXECUTED,,,Physical acceptance pending
+HONOR BRP-NX1,4.0.8,soundcore R50i / speaker,Pause and resume,NOT EXECUTED,,,Physical acceptance pending
+HONOR BRP-NX1,4.0.8,soundcore R50i / speaker,Lock and unlock,NOT EXECUTED,,,Physical acceptance pending
+HONOR BRP-NX1,4.0.8,soundcore R50i / speaker,Background playback,NOT EXECUTED,,,Physical acceptance pending
+HONOR BRP-NX1,4.0.8,soundcore R50i / speaker,Bluetooth reconnect,NOT EXECUTED,,,Physical acceptance pending
+HONOR BRP-NX1,4.0.8,soundcore R50i / speaker,Speaker/Bluetooth switching,NOT EXECUTED,,,Physical acceptance pending
+HONOR BRP-NX1,4.0.8,soundcore R50i / speaker,Repeated DSP activation,NOT EXECUTED,,,Physical acceptance pending
+HONOR BRP-NX1,4.0.8,soundcore R50i / speaker,Force-stop processing service,NOT EXECUTED,,,Physical acceptance pending
+HONOR BRP-NX1,4.0.8,soundcore R50i / speaker,Session failure recovery timing,NOT EXECUTED,,,Physical acceptance pending

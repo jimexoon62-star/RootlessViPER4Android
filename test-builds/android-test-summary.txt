@@ -1,0 +1,14 @@
+PASS — Android 16 x86_64, runtime 7c6e128, instrumentation 4748038
+Run: https://github.com/jimexoon62-star/RootlessViPER4Android/actions/runs/39107425868
+Actual update 134 -> 136: PASS
+NativeAudioRecoveryTest: OK (5 tests)
+DirectSessionEffectTest: OK (1 test), gain and EQ measured
+DirectCrossAppTest: OK (4 tests), official VLC/mpv and separate AudioTrack/AAudio source apps
+DirectServiceLifecycleTest: OK (1 test), RECORD_AUDIO revoked
+Fatal crash-buffer check: PASS
+VLC: -4951 -> -6153 -> -4951 mB
+AAudio + AudioTrack (AudioPolicy): -4652 -> -5851 -> -4650 mB
+AAudio + AudioTrack (AudioService): -4652 -> -5852 -> -4650 mB
+mpv: -4951 -> -6153 -> -4951 mB
+Maximum observed restoration difference: 0.02 dB
+Physical HONOR/Spotify/Bluetooth acceptance: NOT EXECUTED

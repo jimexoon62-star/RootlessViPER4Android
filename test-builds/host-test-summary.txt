@@ -1,0 +1,3 @@
+Runtime source 7c6e128
+{'tests': 94, 'failures': 0, 'errors': 0, 'skipped': 0}
+Five SessionPollCoordinator regression tests passed; remaining 89 existing tests passed.

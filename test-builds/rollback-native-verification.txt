@@ -1,0 +1,6 @@
+libjamesdsp.so dependencies= ['liblog.so', 'libm.so', 'libdl.so', 'libc.so']
+libjamesdsp-wrapper.so dependencies= ['libjdspimprestoolbox.so', 'libcrashlytics-connector.so', 'libjamesdsp.so', 'liblog.so', 'libm.so', 'libdl.so', 'libc.so']
+libjdspimprestoolbox.so dependencies= ['libjamesdsp.so', 'liblog.so', 'libm.so', 'libdl.so', 'libc.so']
+libcrashlytics-connector.so dependencies= ['liblog.so', 'libm.so', 'libdl.so', 'libc.so']
+ARM64 architecture, packaged dependency closure, mandatory DSP exports and wrapper dependency: PASS
+No claim of device playback or installation verification.
