@@ -2,8 +2,9 @@
 set -euo pipefail
 mkdir -p cross-app-evidence
 trap 'adb logcat -b all -d > cross-app-evidence/logcat.txt; adb shell dumpsys media.audio_flinger > cross-app-evidence/audio-flinger.txt; adb shell dumpsys audio > cross-app-evidence/audio.txt' EXIT
-for file in app instrumentation source-one source-two; do
-  adb install "test-fixtures/cross-app/$file.apk"
+adb install test-fixtures/cross-app/app.apk
+for file in instrumentation source-one source-two; do
+  adb install -t "test-fixtures/cross-app/$file.apk"
 done
 pkg=com.alienware377.viper4android.rootless
 adb shell pm grant "$pkg" android.permission.DUMP
