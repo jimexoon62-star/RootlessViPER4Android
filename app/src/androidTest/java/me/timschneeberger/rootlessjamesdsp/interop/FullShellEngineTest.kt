@@ -36,6 +36,7 @@ class FullShellEngineTest {
     @Test fun actualShizukuConsentAndRemoteProcessRunsCompleteEngine() = exercise(3)
     @Test fun physicalRouteCallbackRetiresAndRecoversGeneration() = exercise(4)
     @Test fun heldBinderShutdownAndRepeatedEnableDisableReleaseRouting() = exercise(5)
+    @Test fun digitalZeroDspWithSuccessfulIoRestoresOriginal() = exercise(6)
     private fun exercise(failure: Int, aaudio:Boolean=false) {
         val app=context.getSharedPreferences(Constants.PREF_APP,0)
         val output=context.getSharedPreferences(Constants.PREF_OUTPUT,0)
@@ -99,6 +100,12 @@ class FullShellEngineTest {
                     throw java.io.IOException("Injected DSP processing exception")
                 }
             }
+            if(failure==6) ShellAudioProcessorService.afterProcess={samples,count->
+                if(fullBlocks.incrementAndGet()>500) {
+                    failureAt.compareAndSet(0,SystemClock.elapsedRealtime()); poisoned.set(true)
+                    java.util.Arrays.fill(samples,0,count,0.toShort())
+                }
+            }
             shell("am start -W -n org.rv4a.captureprobe/.DirectToneActivity"+(if(aaudio)" --ez aaudio true --ei aaudio_recovery_delay 800" else ""))
             m=meter(); var baseline=rms(m)
             val deadline=SystemClock.elapsedRealtime()+10000
@@ -136,15 +143,15 @@ class FullShellEngineTest {
                 assertTrue(bound.await(3,java.util.concurrent.TimeUnit.SECONDS))
             }
             val start=SystemClock.elapsedRealtime()
-            if(failure==0 || failure>=3) main { RootlessAudioProcessorService.stop(context) }
+            if(failure==0 || failure in 3..5) main { RootlessAudioProcessorService.stop(context) }
             var restored=rms(m)
             while(kotlin.math.abs(restored-baseline)>250 && SystemClock.elapsedRealtime()-start<15000) restored=rms(m)
             assertTrue("Original playback not restored: $baseline -> $restored",kotlin.math.abs(restored-baseline)<250)
             val recovery=SystemClock.elapsedRealtime()-(if(failureAt.get()>0) failureAt.get() else start)
-            if(failure in 1..2) assertTrue("Fault was not injected",failureAt.get()>0)
+            if(failure in 1..2 || failure==6) assertTrue("Fault was not injected",failureAt.get()>0)
             assertTrue("Recovery observation exceeded bound: $recovery",recovery<5000)
             android.util.Log.i("FullShellEngineTest","FULL_ENGINE failure=$failure baseline=$baseline processed=$processed restored=$restored recoveryObservationMs=$recovery transports=${connections.get()}")
-            if(failure in 1..2) { SystemClock.sleep(2500); assertTrue("Runaway recovery transports",connections.get()<=4) }
+            if(failure in 1..2 || failure==6) { SystemClock.sleep(2500); assertTrue("Runaway recovery transports",connections.get()<=4) }
             if(failure==5) {
                 assertTrue(BaseAudioProcessorService.liveInstances().filterIsInstance<ShellAudioProcessorService>().single().hasStoppedProcessing)
                 main { context.unbindService(heldConnection!!); heldConnection=null }
@@ -180,7 +187,7 @@ class FullShellEngineTest {
             main {
                 RootlessAudioProcessorService.stop(context)
                 heldConnection?.let { context.unbindService(it); heldConnection=null }
-                ShellAudioProcessorService.beforeProcess=null; ShellAudioProcessorService.sourceFactory=null;
+                ShellAudioProcessorService.beforeProcess=null; ShellAudioProcessorService.afterProcess=null; ShellAudioProcessorService.sourceFactory=null;
                 fun restore(p:android.content.SharedPreferences,values:Map<String,*>) { val edit=p.edit().clear(); values.forEach { (key,value)->when(value) { is Boolean->edit.putBoolean(key,value); is Float->edit.putFloat(key,value); is Int->edit.putInt(key,value); is Long->edit.putLong(key,value); is String->edit.putString(key,value) } }; edit.commit() }
                 restore(app,oldApp); restore(output,oldOutput)
             }

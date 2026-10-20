@@ -1,0 +1,9 @@
+case,environment,status,evidence
+Spotify 60 minute playback,HONOR BRP-NX1 Android16 soundcore R50i,PENDING,No physical device access
+Track skips and seeks,HONOR BRP-NX1 Android16 Spotify,PENDING,
+Pause resume,HONOR BRP-NX1 Android16 Spotify,PENDING,
+Screen lock and background,HONOR BRP-NX1 Android16 Spotify,PENDING,
+Bluetooth reconnect and speaker switch,HONOR BRP-NX1 Android16 Spotify,PENDING,
+Repeated DSP enable disable,HONOR BRP-NX1 Android16 Spotify,PENDING,
+Deliberate service failure and measured audio restoration,HONOR BRP-NX1 Android16 Spotify,PENDING,
+Native effect audible comparison,HONOR BRP-NX1 Android16 Spotify,PENDING,

@@ -244,6 +244,7 @@ class ShellAudioProcessorService : BaseAudioProcessorService() {
             var activeFrames = 0
             var unsuccessfulProbes = 0
             val input = ShortArray(960); val output = ShortArray(960)
+            val integrity = OutputIntegrity()
             while (!g.closed.get()) {
                 val n = source.read(input)
                 val capturedAt = SystemClock.elapsedRealtime()
@@ -276,6 +277,8 @@ class ShellAudioProcessorService : BaseAudioProcessorService() {
                 }
                 beforeProcess?.invoke()
                 engine.processInt16(input, output, 0, n)
+                afterProcess?.invoke(output, n)
+                integrity.check(input, output, g.rate, n)
                 if (g.closed.get()) break
                 val inputQuiet = (0 until n).all { kotlin.math.abs(input[it].toInt()) <= 2 }
                 val outputQuiet = (0 until n).all { kotlin.math.abs(output[it].toInt()) <= 2 }
@@ -382,6 +385,7 @@ class ShellAudioProcessorService : BaseAudioProcessorService() {
         fun requested(context: Context) = context.getSharedPreferences(Constants.PREF_APP, Context.MODE_PRIVATE).getBoolean(MODE_KEY, true)
         internal var sourceFactory: ((Context, Int, Set<Int>, Boolean) -> RoutedPcmSource)? = null
         internal var beforeProcess: (() -> Unit)? = null
+        internal var afterProcess: ((ShortArray, Int) -> Unit)? = null
         private fun openSource(context: Context, rate: Int, uids: Set<Int>, monitor: Boolean) = sourceFactory?.invoke(context, rate, uids, monitor) ?: ShellPcmSource.open(context, rate, uids, monitor)
     }
 }
