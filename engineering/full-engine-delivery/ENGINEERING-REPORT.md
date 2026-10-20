@@ -104,3 +104,36 @@ fully fail-safe or the owner assignment complete at this stage.
 
 The subsequent digital-zero DSP guard and partial-buffer integrity tests require
 new execution. They are not covered by the successful run above.
+
+## 2026-10-20 build and local verification
+
+Source e985548: 115 JVM tests passed, zero failures/errors/skips. Executed:
+
+```
+python engineering/build.py -Pandroid.injected.testOnly=false :app:assembleRootlessFdroidRelease :app:assembleRootlessFdroidReleaseAndroidTest :app:testRootlessFdroidReleaseUnitTest -Pandroid.injected.build.abi=x86_64
+python engineering/build.py -Pandroid.injected.testOnly=false :app:assembleRootlessFdroidRelease -Pandroid.injected.build.abi=arm64-v8a
+```
+
+Both builds succeeded. ARM64 APK passed verify_installable_apk.py (normal package
+installer flag, signature, ZIP integrity, 16 KiB ZIP alignment) and
+verify_apk_native.py (AArch64 architecture, packaged dependency closure, native
+exports and wrapper linkage). This is static verification, not an ARM64 install.
+
+Package com.alienware377.viper4android.rootless, versionCode138,
+versionName4.1.0-full-engine-test. Test signer CN=Android Debug,O=Android,C=US,
+certificate SHA256 dfc8c77e9f4ec2b8ff5d133320df6f51eb2440fa32cb07f5d1a910199e3f9675.
+It can update earlier builds with this same signer; upstream signer compatibility
+is not established. Do not uninstall or clear app data on signature mismatch.
+No additional uses-permission declarations were introduced for the full backend.
+Shizuku ADB authorization is required and increases the trusted execution scope.
+
+APK SHA256: 36a4553464f42ffd618c49ed6f2413db6bf40118d43c5693671f5369abc08e86.
+Rollback APK SHA256: d6de7c6e01c5b32e25b7fb2f56a91f86814f8e04e99863028461815b0ebb14bf.
+Rollback versionCode139 is old 4.0.7 runtime with only version metadata changed,
+source b327b47. Same signer permits updating over138 without data clearing;
+this rollback has not been installed on the owner's device.
+
+Latest 28-scenario instrumentation execution:
+https://github.com/jimexoon62-star/RootlessViPER4Android/actions/runs/39509693743
+Status must be read from executed evidence before marking it passed. The
+previous27-test pass does not validate the new digital-zero scenario.
