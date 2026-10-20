@@ -137,3 +137,21 @@ Latest 28-scenario instrumentation execution:
 https://github.com/jimexoon62-star/RootlessViPER4Android/actions/runs/39509693743
 Status must be read from executed evidence before marking it passed. The
 previous27-test pass does not validate the new digital-zero scenario.
+
+## Final automated result for source e985548
+
+Run39509693743 completed SUCCESS on 2026-10-20. Downloaded evidence confirms:
+5 NativeAudioRecovery +14 FullNativeEffects +8 FullShellEngine +1 legacy
+DirectServiceLifecycle =28/28 instrumentation tests passed. No routing-worker
+leaks or fatal crash were detected by the workflow gates. JVM tests115/115 pass.
+
+Digital-zero output with successful reads/writes restored the independent
+synthetic source meter baseline: baseline=-4951 mB, processed=-6151 mB,
+restored=-4951 mB, recoveryObservationMs=4280. Other injected failure observation
+windows were1359–2816 ms. Meter windows are included, these are not acoustic
+latency guarantees. FullShellEngine AAudio scenario also passed, using a client
+that correctly reopens disconnected streams. The nonrecovering-client boundary
+above remains unresolved and the overall owner assignment is NOT complete.
+
+The routing callback test is injected, not a real Bluetooth disconnect.
+Physical-device acceptance remains PENDING throughout DEVICE-ACCEPTANCE.csv.
