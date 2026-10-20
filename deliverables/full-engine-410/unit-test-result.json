@@ -1,0 +1,8 @@
+{
+  "source": "e985548",
+  "environment": "local JDK17 / Android toolchain; JVM unit tests, not phone",
+  "tests": 115,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0
+}

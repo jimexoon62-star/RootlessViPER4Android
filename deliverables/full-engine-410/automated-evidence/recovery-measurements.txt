@@ -1,0 +1,9 @@
+10-20 22:42:28.701  4059  4079 I FullShellEngineTest: FULL_ENGINE failure=1 baseline=-4951 processed=-6151 restored=-4951 recoveryObservationMs=2816 transports=2
+10-20 22:42:38.416  4059  4079 I FullShellEngineTest: FULL_ENGINE failure=3 baseline=-4951 processed=-6151 restored=-4951 recoveryObservationMs=1635 transports=0
+10-20 22:42:49.496  4059  4079 I FullShellEngineTest: FULL_ENGINE failure=6 baseline=-4951 processed=-6151 restored=-4951 recoveryObservationMs=4280 transports=2
+10-20 22:43:00.016  4059  4079 I FullShellEngineTest: FULL_ENGINE failure=2 baseline=-4951 processed=-6151 restored=-4951 recoveryObservationMs=1359 transports=2
+10-20 22:43:05.561  4059  4079 I FullShellEngineTest: SESSION_REATTACH sameUID=true baseline=-4951 reattached=-5850 transports=4
+10-20 22:43:12.351  4059  4079 I FullShellEngineTest: FULL_ENGINE failure=5 baseline=-4951 processed=-6151 restored=-4951 recoveryObservationMs=1602 transports=2
+10-20 22:43:31.255  4059  4079 I FullShellEngineTest: FULL_ENGINE failure=4 baseline=-4951 processed=-6151 restored=-4951 recoveryObservationMs=1627 transports=4
+10-20 22:43:37.819  4059  4079 I FullShellEngineTest: FULL_ENGINE failure=0 baseline=-4951 processed=-6151 restored=-5049 recoveryObservationMs=1601 transports=2
+10-20 22:43:44.516  4059  4079 I FullShellEngineTest: FULL_ENGINE failure=0 baseline=-4951 processed=-6151 restored=-4951 recoveryObservationMs=1636 transports=2

@@ -1,0 +1,14 @@
+NATIVE_EFFECT name=Field surround differenceEnergy=11.686539288217643 outputEnergy=115.41074657113738
+NATIVE_EFFECT name=Bass boost differenceEnergy=107.80164099355271 outputEnergy=118.10058304009722
+NATIVE_EFFECT name=Graphic EQ differenceEnergy=16.115465890468503 outputEnergy=16.269251645980216
+NATIVE_EFFECT name=Reverb differenceEnergy=44.81283860505057 outputEnergy=109.3025499625382
+NATIVE_EFFECT name=ViPER Bass differenceEnergy=15.127465215527474 outputEnergy=98.05276524041658
+NATIVE_EFFECT name=ViPER Clarity differenceEnergy=2.9401492588833706 outputEnergy=72.60918339091683
+NATIVE_EFFECT name=Convolver differenceEnergy=15.937964719793749 outputEnergy=24.54380011740928
+NATIVE_EFFECT name=Vacuum tube differenceEnergy=94.06892120323546 outputEnergy=72.6190118739179
+NATIVE_EFFECT name=Cure differenceEnergy=8.008415893796649 outputEnergy=35.67792165598355
+NATIVE_EFFECT name=Stereo enhancement differenceEnergy=71.25496645445556 outputEnergy=6.08696651503599
+NATIVE_EFFECT name=Post gain differenceEnergy=36.31721310741637 outputEnergy=4.086651798553339
+NATIVE_EFFECT name=Headphone surround differenceEnergy=24.67623434185374 outputEnergy=103.38762082052659
+NATIVE_EFFECT name=Differential surround differenceEnergy=39.7037816208936 outputEnergy=64.69045403718462
+NATIVE_EFFECT name=Crossfeed differenceEnergy=11.00676532988183 outputEnergy=36.597501517751645
