@@ -1,0 +1,145 @@
+INSTRUMENTATION_STATUS: class=me.timschneeberger.rootlessjamesdsp.interop.FullShellEngineTest
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=8
+INSTRUMENTATION_STATUS: stream=
+me.timschneeberger.rootlessjamesdsp.interop.FullShellEngineTest:
+INSTRUMENTATION_STATUS: test=lostRendererLeaseRestoresOriginalWithoutAppStop
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=me.timschneeberger.rootlessjamesdsp.interop.FullShellEngineTest
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=8
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=lostRendererLeaseRestoresOriginalWithoutAppStop
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=me.timschneeberger.rootlessjamesdsp.interop.FullShellEngineTest
+INSTRUMENTATION_STATUS: current=2
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=8
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=actualShizukuConsentAndRemoteProcessRunsCompleteEngine
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=me.timschneeberger.rootlessjamesdsp.interop.FullShellEngineTest
+INSTRUMENTATION_STATUS: current=2
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=8
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=actualShizukuConsentAndRemoteProcessRunsCompleteEngine
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=me.timschneeberger.rootlessjamesdsp.interop.FullShellEngineTest
+INSTRUMENTATION_STATUS: current=3
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=8
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=digitalZeroDspWithSuccessfulIoRestoresOriginal
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=me.timschneeberger.rootlessjamesdsp.interop.FullShellEngineTest
+INSTRUMENTATION_STATUS: current=3
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=8
+INSTRUMENTATION_STATUS: stack=java.lang.AssertionError: Recovery observation exceeded bound: 5027
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.assertTrue(Assert.java:42)
+	at me.timschneeberger.rootlessjamesdsp.interop.FullShellEngineTest.exercise(FullShellEngineTest.kt:152)
+	at me.timschneeberger.rootlessjamesdsp.interop.FullShellEngineTest.exercise$default(FullShellEngineTest.kt:40)
+	at me.timschneeberger.rootlessjamesdsp.interop.FullShellEngineTest.digitalZeroDspWithSuccessfulIoRestoresOriginal(FullShellEngineTest.kt:39)
+
+INSTRUMENTATION_STATUS: stream=
+Error in digitalZeroDspWithSuccessfulIoRestoresOriginal(me.timschneeberger.rootlessjamesdsp.interop.FullShellEngineTest):
+java.lang.AssertionError: Recovery observation exceeded bound: 5027
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.assertTrue(Assert.java:42)
+	at me.timschneeberger.rootlessjamesdsp.interop.FullShellEngineTest.exercise(FullShellEngineTest.kt:152)
+	at me.timschneeberger.rootlessjamesdsp.interop.FullShellEngineTest.exercise$default(FullShellEngineTest.kt:40)
+	at me.timschneeberger.rootlessjamesdsp.interop.FullShellEngineTest.digitalZeroDspWithSuccessfulIoRestoresOriginal(FullShellEngineTest.kt:39)
+
+INSTRUMENTATION_STATUS: test=digitalZeroDspWithSuccessfulIoRestoresOriginal
+INSTRUMENTATION_STATUS_CODE: -2
+INSTRUMENTATION_STATUS: class=me.timschneeberger.rootlessjamesdsp.interop.FullShellEngineTest
+INSTRUMENTATION_STATUS: current=4
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=8
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=forcedDspExceptionReleasesRoutingAndBoundsRetries
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=me.timschneeberger.rootlessjamesdsp.interop.FullShellEngineTest
+INSTRUMENTATION_STATUS: current=4
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=8
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=forcedDspExceptionReleasesRoutingAndBoundsRetries
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=me.timschneeberger.rootlessjamesdsp.interop.FullShellEngineTest
+INSTRUMENTATION_STATUS: current=5
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=8
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=heldBinderShutdownAndRepeatedEnableDisableReleaseRouting
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=me.timschneeberger.rootlessjamesdsp.interop.FullShellEngineTest
+INSTRUMENTATION_STATUS: current=5
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=8
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=heldBinderShutdownAndRepeatedEnableDisableReleaseRouting
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=me.timschneeberger.rootlessjamesdsp.interop.FullShellEngineTest
+INSTRUMENTATION_STATUS: current=6
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=8
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=physicalRouteCallbackRetiresAndRecoversGeneration
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=me.timschneeberger.rootlessjamesdsp.interop.FullShellEngineTest
+INSTRUMENTATION_STATUS: current=6
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=8
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=physicalRouteCallbackRetiresAndRecoversGeneration
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=me.timschneeberger.rootlessjamesdsp.interop.FullShellEngineTest
+INSTRUMENTATION_STATUS: current=7
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=8
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=aaudio44100SourceUsesFullEngine
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=me.timschneeberger.rootlessjamesdsp.interop.FullShellEngineTest
+INSTRUMENTATION_STATUS: current=7
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=8
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=aaudio44100SourceUsesFullEngine
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=me.timschneeberger.rootlessjamesdsp.interop.FullShellEngineTest
+INSTRUMENTATION_STATUS: current=8
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=8
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=actualFullEngineProcessesOptedOutSourceAndRestoresOnStop
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=me.timschneeberger.rootlessjamesdsp.interop.FullShellEngineTest
+INSTRUMENTATION_STATUS: current=8
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=8
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=actualFullEngineProcessesOptedOutSourceAndRestoresOnStop
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_RESULT: stream=
+
+Time: 99.588
+There was 1 failure:
+1) digitalZeroDspWithSuccessfulIoRestoresOriginal(me.timschneeberger.rootlessjamesdsp.interop.FullShellEngineTest)
+java.lang.AssertionError: Recovery observation exceeded bound: 5027
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.assertTrue(Assert.java:42)
+	at me.timschneeberger.rootlessjamesdsp.interop.FullShellEngineTest.exercise(FullShellEngineTest.kt:152)
+	at me.timschneeberger.rootlessjamesdsp.interop.FullShellEngineTest.exercise$default(FullShellEngineTest.kt:40)
+	at me.timschneeberger.rootlessjamesdsp.interop.FullShellEngineTest.digitalZeroDspWithSuccessfulIoRestoresOriginal(FullShellEngineTest.kt:39)
+
+FAILURES!!!
+Tests run: 8,  Failures: 1
+
+
+INSTRUMENTATION_CODE: -1

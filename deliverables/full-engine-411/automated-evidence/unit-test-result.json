@@ -1,0 +1,8 @@
+{
+  "runtime_source": "c0b9a2c",
+  "environment": "local JVM, not physical Android",
+  "tests": 122,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0
+}

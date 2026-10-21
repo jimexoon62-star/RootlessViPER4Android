@@ -1,0 +1,25 @@
+10-21 14:16:30.509  3676  3701 I FullNativeEffectsTest: NATIVE_EFFECT name=Field surround differenceEnergy=11.686539288217643 outputEnergy=115.41074657113738
+10-21 14:16:30.625  3676  3701 I FullNativeEffectsTest: NATIVE_EFFECT name=Bass boost differenceEnergy=107.80164099355271 outputEnergy=118.10058304009722
+10-21 14:16:30.847  3676  3701 I FullNativeEffectsTest: NATIVE_EFFECT name=Graphic EQ differenceEnergy=16.115465890468503 outputEnergy=16.269251645980216
+10-21 14:16:31.335  3676  3701 I FullNativeEffectsTest: NATIVE_EFFECT name=Reverb differenceEnergy=44.81283860505057 outputEnergy=109.3025499625382
+10-21 14:16:31.455  3676  3701 I FullNativeEffectsTest: NATIVE_EFFECT name=ViPER Bass differenceEnergy=15.127465215527474 outputEnergy=98.05276524041658
+10-21 14:16:31.531  3676  3701 I FullNativeEffectsTest: NATIVE_EFFECT name=ViPER Clarity differenceEnergy=2.9401492588833706 outputEnergy=72.60918339091683
+10-21 14:16:31.646  3676  3701 I FullNativeEffectsTest: NATIVE_EFFECT name=Convolver differenceEnergy=15.937964719793749 outputEnergy=24.54380011740928
+10-21 14:16:31.761  3676  3701 I FullNativeEffectsTest: NATIVE_EFFECT name=Vacuum tube differenceEnergy=94.06892120323546 outputEnergy=72.6190118739179
+10-21 14:16:31.852  3676  3701 I FullNativeEffectsTest: NATIVE_EFFECT name=Cure differenceEnergy=8.008415893796649 outputEnergy=35.67792165598355
+10-21 14:16:31.958  3676  3701 I FullNativeEffectsTest: NATIVE_EFFECT name=Stereo enhancement differenceEnergy=71.25496645445556 outputEnergy=6.08696651503599
+10-21 14:16:32.015  3676  3701 I FullNativeEffectsTest: NATIVE_EFFECT name=Post gain differenceEnergy=36.31721310741637 outputEnergy=4.086651798553339
+10-21 14:16:32.156  3676  3701 I FullNativeEffectsTest: NATIVE_EFFECT name=Headphone surround differenceEnergy=24.67623434185374 outputEnergy=103.38762082052659
+10-21 14:16:32.278  3676  3701 I FullNativeEffectsTest: NATIVE_EFFECT name=Differential surround differenceEnergy=39.7037816208936 outputEnergy=64.69045403718462
+10-21 14:16:32.350  3676  3701 I FullNativeEffectsTest: NATIVE_EFFECT name=Crossfeed differenceEnergy=11.00676532988183 outputEnergy=36.597501517751645
+10-21 14:16:51.124  3915  3940 I FullShellEngineTest: FULL_ENGINE failure=1 baseline=-4951 processed=-6151 restored=-5062 recoveryObservationMs=2070 transports=2
+10-21 14:17:02.297  3915  3940 I FullShellEngineTest: FULL_ENGINE failure=3 baseline=-4951 processed=-6151 restored=-5070 recoveryObservationMs=604 transports=0
+10-21 14:17:16.303  3915  3940 I FullShellEngineTest: FULL_ENGINE failure=6 baseline=-4951 processed=-6151 restored=-5048 recoveryObservationMs=3648 transports=2
+10-21 14:17:28.486  3915  3940 I FullShellEngineTest: FULL_ENGINE failure=2 baseline=-4951 processed=-6151 restored=-5069 recoveryObservationMs=551 transports=2
+10-21 14:17:34.130  3915  3940 I FullShellEngineTest: SESSION_REATTACH sameUID=true baseline=-4951 reattached=-5850 transports=4
+10-21 14:17:40.631  3915  3940 I FullShellEngineTest: FULL_ENGINE failure=5 baseline=-4951 processed=-6151 restored=-5093 recoveryObservationMs=567 transports=2
+10-21 14:17:59.078  3915  3940 I FullShellEngineTest: FULL_ENGINE failure=4 baseline=-4951 processed=-6151 restored=-5070 recoveryObservationMs=566 transports=4
+10-21 14:18:06.011  3915  3940 I FullShellEngineTest: FULL_ENGINE failure=0 baseline=-4951 processed=-6218 restored=-5048 recoveryObservationMs=1398 transports=2
+10-21 14:18:12.214  3915  3940 I FullShellEngineTest: FULL_ENGINE failure=0 baseline=-4951 processed=-6151 restored=-5070 recoveryObservationMs=556 transports=2
+10-21 14:18:17.351  6000  6015 I ShellRoutingGuardTest: GUARD_RECOVERY mode=cleanup baseline=-4951 restored=-4951 observationMs=2194
+10-21 14:18:25.829  6000  6015 I ShellRoutingGuardTest: GUARD_RECOVERY mode=init baseline=-4951 restored=-4951 observationMs=6020

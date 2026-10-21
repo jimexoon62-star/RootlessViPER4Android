@@ -1,0 +1,101 @@
+INSTRUMENTATION_STATUS: class=me.timschneeberger.rootlessjamesdsp.interop.ShellRoutingGuardTest
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=2
+INSTRUMENTATION_STATUS: stream=
+me.timschneeberger.rootlessjamesdsp.interop.ShellRoutingGuardTest:
+INSTRUMENTATION_STATUS: test=stuckPolicyCleanupCannotPreventRealBinderDeathRelease
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=me.timschneeberger.rootlessjamesdsp.interop.ShellRoutingGuardTest
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=2
+INSTRUMENTATION_STATUS: stack=java.lang.IllegalArgumentException: process hasn't exited
+	at android.os.Parcel.createExceptionOrNull(Parcel.java:3344)
+	at android.os.Parcel.createException(Parcel.java:3324)
+	at android.os.Parcel.readException(Parcel.java:3307)
+	at android.os.Parcel.readException(Parcel.java:3249)
+	at moe.shizuku.server.IRemoteProcess$Stub$Proxy.exitValue(IRemoteProcess.java:296)
+	at rikka.shizuku.ShizukuRemoteProcess.exitValue(ShizukuRemoteProcess.java:91)
+	at me.timschneeberger.rootlessjamesdsp.interop.ShellRoutingGuardTest.exercise(ShellRoutingGuardTest.kt:56)
+	at me.timschneeberger.rootlessjamesdsp.interop.ShellRoutingGuardTest.stuckPolicyCleanupCannotPreventRealBinderDeathRelease(ShellRoutingGuardTest.kt:26)
+
+INSTRUMENTATION_STATUS: stream=
+Error in stuckPolicyCleanupCannotPreventRealBinderDeathRelease(me.timschneeberger.rootlessjamesdsp.interop.ShellRoutingGuardTest):
+java.lang.IllegalArgumentException: process hasn't exited
+	at android.os.Parcel.createExceptionOrNull(Parcel.java:3344)
+	at android.os.Parcel.createException(Parcel.java:3324)
+	at android.os.Parcel.readException(Parcel.java:3307)
+	at android.os.Parcel.readException(Parcel.java:3249)
+	at moe.shizuku.server.IRemoteProcess$Stub$Proxy.exitValue(IRemoteProcess.java:296)
+	at rikka.shizuku.ShizukuRemoteProcess.exitValue(ShizukuRemoteProcess.java:91)
+	at me.timschneeberger.rootlessjamesdsp.interop.ShellRoutingGuardTest.exercise(ShellRoutingGuardTest.kt:56)
+	at me.timschneeberger.rootlessjamesdsp.interop.ShellRoutingGuardTest.stuckPolicyCleanupCannotPreventRealBinderDeathRelease(ShellRoutingGuardTest.kt:26)
+
+INSTRUMENTATION_STATUS: test=stuckPolicyCleanupCannotPreventRealBinderDeathRelease
+INSTRUMENTATION_STATUS_CODE: -2
+INSTRUMENTATION_STATUS: class=me.timschneeberger.rootlessjamesdsp.interop.ShellRoutingGuardTest
+INSTRUMENTATION_STATUS: current=2
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=2
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=stuckCaptureCreationReleasesRealRegisteredPolicyOnHardDeadline
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=me.timschneeberger.rootlessjamesdsp.interop.ShellRoutingGuardTest
+INSTRUMENTATION_STATUS: current=2
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=2
+INSTRUMENTATION_STATUS: stack=java.lang.IllegalArgumentException: process hasn't exited
+	at android.os.Parcel.createExceptionOrNull(Parcel.java:3344)
+	at android.os.Parcel.createException(Parcel.java:3324)
+	at android.os.Parcel.readException(Parcel.java:3307)
+	at android.os.Parcel.readException(Parcel.java:3249)
+	at moe.shizuku.server.IRemoteProcess$Stub$Proxy.exitValue(IRemoteProcess.java:296)
+	at rikka.shizuku.ShizukuRemoteProcess.exitValue(ShizukuRemoteProcess.java:91)
+	at me.timschneeberger.rootlessjamesdsp.interop.ShellRoutingGuardTest.exercise(ShellRoutingGuardTest.kt:56)
+	at me.timschneeberger.rootlessjamesdsp.interop.ShellRoutingGuardTest.stuckCaptureCreationReleasesRealRegisteredPolicyOnHardDeadline(ShellRoutingGuardTest.kt:25)
+
+INSTRUMENTATION_STATUS: stream=
+Error in stuckCaptureCreationReleasesRealRegisteredPolicyOnHardDeadline(me.timschneeberger.rootlessjamesdsp.interop.ShellRoutingGuardTest):
+java.lang.IllegalArgumentException: process hasn't exited
+	at android.os.Parcel.createExceptionOrNull(Parcel.java:3344)
+	at android.os.Parcel.createException(Parcel.java:3324)
+	at android.os.Parcel.readException(Parcel.java:3307)
+	at android.os.Parcel.readException(Parcel.java:3249)
+	at moe.shizuku.server.IRemoteProcess$Stub$Proxy.exitValue(IRemoteProcess.java:296)
+	at rikka.shizuku.ShizukuRemoteProcess.exitValue(ShizukuRemoteProcess.java:91)
+	at me.timschneeberger.rootlessjamesdsp.interop.ShellRoutingGuardTest.exercise(ShellRoutingGuardTest.kt:56)
+	at me.timschneeberger.rootlessjamesdsp.interop.ShellRoutingGuardTest.stuckCaptureCreationReleasesRealRegisteredPolicyOnHardDeadline(ShellRoutingGuardTest.kt:25)
+
+INSTRUMENTATION_STATUS: test=stuckCaptureCreationReleasesRealRegisteredPolicyOnHardDeadline
+INSTRUMENTATION_STATUS_CODE: -2
+INSTRUMENTATION_RESULT: stream=
+
+Time: 4.878
+There were 2 failures:
+1) stuckPolicyCleanupCannotPreventRealBinderDeathRelease(me.timschneeberger.rootlessjamesdsp.interop.ShellRoutingGuardTest)
+java.lang.IllegalArgumentException: process hasn't exited
+	at android.os.Parcel.createExceptionOrNull(Parcel.java:3344)
+	at android.os.Parcel.createException(Parcel.java:3324)
+	at android.os.Parcel.readException(Parcel.java:3307)
+	at android.os.Parcel.readException(Parcel.java:3249)
+	at moe.shizuku.server.IRemoteProcess$Stub$Proxy.exitValue(IRemoteProcess.java:296)
+	at rikka.shizuku.ShizukuRemoteProcess.exitValue(ShizukuRemoteProcess.java:91)
+	at me.timschneeberger.rootlessjamesdsp.interop.ShellRoutingGuardTest.exercise(ShellRoutingGuardTest.kt:56)
+	at me.timschneeberger.rootlessjamesdsp.interop.ShellRoutingGuardTest.stuckPolicyCleanupCannotPreventRealBinderDeathRelease(ShellRoutingGuardTest.kt:26)
+2) stuckCaptureCreationReleasesRealRegisteredPolicyOnHardDeadline(me.timschneeberger.rootlessjamesdsp.interop.ShellRoutingGuardTest)
+java.lang.IllegalArgumentException: process hasn't exited
+	at android.os.Parcel.createExceptionOrNull(Parcel.java:3344)
+	at android.os.Parcel.createException(Parcel.java:3324)
+	at android.os.Parcel.readException(Parcel.java:3307)
+	at android.os.Parcel.readException(Parcel.java:3249)
+	at moe.shizuku.server.IRemoteProcess$Stub$Proxy.exitValue(IRemoteProcess.java:296)
+	at rikka.shizuku.ShizukuRemoteProcess.exitValue(ShizukuRemoteProcess.java:91)
+	at me.timschneeberger.rootlessjamesdsp.interop.ShellRoutingGuardTest.exercise(ShellRoutingGuardTest.kt:56)
+	at me.timschneeberger.rootlessjamesdsp.interop.ShellRoutingGuardTest.stuckCaptureCreationReleasesRealRegisteredPolicyOnHardDeadline(ShellRoutingGuardTest.kt:25)
+
+FAILURES!!!
+Tests run: 2,  Failures: 2
+
+
+INSTRUMENTATION_CODE: -1
