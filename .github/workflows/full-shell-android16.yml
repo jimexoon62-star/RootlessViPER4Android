@@ -1,5 +1,6 @@
 name: Android 16 full native engine and routing recovery
 on:
+  workflow_dispatch:
   push:
     branches: [qa/full-shell-android16]
 permissions:
