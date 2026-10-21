@@ -53,7 +53,7 @@ class ShellRoutingGuardTest {
             var exited=false
             val until=started+6000
             while(SystemClock.elapsedRealtime()<until) {
-                try {worker.exitValue();exited=true;break} catch (_:IllegalThreadStateException) {SystemClock.sleep(25)}
+                if(!worker.alive()) {exited=true;break};SystemClock.sleep(25)
             }
             assertTrue("Policy owner did not terminate independently: $diagnostics",exited)
             stderr.join(1000)

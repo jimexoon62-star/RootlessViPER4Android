@@ -29,6 +29,18 @@ class FullShellEngineTest {
         SystemClock.sleep(1000)
         return List(8) { val value=Visualizer.MeasurementPeakRms(); assertEquals(0,m.getMeasurementPeakRms(value)); SystemClock.sleep(60); value.mRms }.sorted()[4]
     }
+    private fun awaitBaseline(m:Visualizer, baseline:Int):Int {
+        val until=SystemClock.elapsedRealtime()+15000
+        var matches=0;var measured=Int.MIN_VALUE
+        while(SystemClock.elapsedRealtime()<until) {
+            val value=Visualizer.MeasurementPeakRms()
+            assertEquals(0,m.getMeasurementPeakRms(value));measured=value.mRms
+            matches=if(kotlin.math.abs(measured-baseline)<250) matches+1 else 0
+            if(matches>=3) return measured
+            SystemClock.sleep(50)
+        }
+        return measured
+    }
     @Test fun actualFullEngineProcessesOptedOutSourceAndRestoresOnStop() = exercise(0)
     @Test fun lostRendererLeaseRestoresOriginalWithoutAppStop() = exercise(1)
     @Test fun forcedDspExceptionReleasesRoutingAndBoundsRetries() = exercise(2)
@@ -144,8 +156,9 @@ class FullShellEngineTest {
             }
             val start=SystemClock.elapsedRealtime()
             if(failure==0 || failure in 3..5) main { RootlessAudioProcessorService.stop(context) }
-            var restored=rms(m)
-            while(kotlin.math.abs(restored-baseline)>250 && SystemClock.elapsedRealtime()-start<15000) restored=rms(m)
+            // Sample continuously: the old repeated 1.48s windows quantized recovery
+            // observations and could exceed the bound after audio had already returned.
+            val restored=awaitBaseline(m,baseline)
             assertTrue("Original playback not restored: $baseline -> $restored",kotlin.math.abs(restored-baseline)<250)
             val recovery=SystemClock.elapsedRealtime()-(if(failureAt.get()>0) failureAt.get() else start)
             if(failure in 1..2 || failure==6) assertTrue("Fault was not injected",failureAt.get()>0)
