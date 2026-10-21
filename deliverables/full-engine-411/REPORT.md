@@ -33,8 +33,7 @@ normal/idempotent cleanup, steady renderer lease, stale callbacks, and premature
 acknowledgements during initialization, plus simultaneous shutdown and callbacks. Two integration tests run a separate
 instrumentation-only worker under real Shizuku, intentionally block it after
 real policy registration or before real unregistration, and verify process exit
-and synthetic source baseline restoration. These tests must be executed before
-this section is marked passed.
+and synthetic source baseline restoration. Executed results and evidence are recorded below.
 
 The full existing native effects and recovery suites are also required because
 the worker's startup and shutdown order changed. No mocked pass proves audible
@@ -59,7 +58,7 @@ release; this must not be hidden behind the passing tests of a well-behaved
 synthetic AAudio client.
 
 Local source c0b9a2c:122 JVM tests executed, zero failures/errors/skips.
-Android30-scenario run is pending; no claim of passing it has been made.
+The final Android30-scenario result is recorded below.
 
 ## Executed build and static gates
 
@@ -102,9 +101,8 @@ the original5000ms assertion unchanged. Product DSP and the signed ARM64 APK
 were not modified to address these instrumentation failures. This is a change
 in measurement, not a claim of improved physical audio recovery latency.
 
-The corrected instrumentation is being verified in run39614979983. The duplicate
-manual run39614981994 was requested to cancel. Full test evidence and the final
-status must be taken from executed output, not from this pending report.
+The corrected instrumentation passed in run39614979983. Duplicate manual
+run39614981994 was cancelled. Executed evidence and measurement limits follow.
 
 ## Final executed integration result —2026-10-21
 
