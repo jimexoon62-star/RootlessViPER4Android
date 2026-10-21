@@ -43,4 +43,14 @@ class ShellRouteGuardTest {
         val h=Harness(); h.time+=3000; h.guard.acknowledge(); h.time+=1000; h.guard.poll()
         assertTrue(h.guard.isClosed)
     }
+    @Test fun simultaneousCloseAndCallbacksScheduleExactlyOneCleanup() {
+        val h=Harness(); val pool=java.util.concurrent.Executors.newFixedThreadPool(4)
+        val start=java.util.concurrent.CountDownLatch(1)
+        try {
+            val jobs=(0 until 32).map { i->pool.submit { start.await(); h.guard.ready(); h.guard.acknowledge(); h.guard.close(i%2) } }
+            start.countDown();jobs.forEach { it.get(2,java.util.concurrent.TimeUnit.SECONDS) }
+            assertEquals(1,h.cleanup.size);h.cleanup.single().run();h.guard.poll();h.guard.poll()
+            assertEquals(1,h.releases.get());assertEquals(1,h.exits.size)
+        } finally {pool.shutdownNow()}
+    }
 }

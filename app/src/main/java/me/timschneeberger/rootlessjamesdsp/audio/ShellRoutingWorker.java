@@ -94,7 +94,7 @@ public final class ShellRoutingWorker {
         Thread lease = new Thread(() -> {
             while (true) {
                 guard.poll();
-                try { Thread.sleep(25); } catch (InterruptedException ignored) { guard.close(1); }
+                try { Thread.sleep(guard.isClosed() ? 25 : 100); } catch (InterruptedException ignored) { guard.close(1); }
             }
         }, "ShellRendererLease");
         lease.setDaemon(true); lease.start(); // BEFORE any policy registration or AudioRecord creation.

@@ -41,7 +41,7 @@ class ShellRoutingGuardTest {
             val worker=method.invoke(null,command,null,null) as ShizukuRemoteProcess
             process=worker
             val diagnostics=StringBuffer()
-            val stderr=Thread {worker.errorStream.bufferedReader().useLines { lines->lines.forEach { diagnostics.append(it).append('\n') } } }.apply {isDaemon=true;start()}
+            val stderr=Thread {try { worker.errorStream.bufferedReader().useLines { lines->lines.forEach { diagnostics.append(it).append('\n') } } } catch (_:java.io.IOException) {} }.apply {isDaemon=true;start()}
             val started=SystemClock.elapsedRealtime()
             if(mode=="cleanup") {
                 val data=DataInputStream(worker.inputStream)
