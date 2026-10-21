@@ -27,6 +27,7 @@ failed=0
 run_test NativeAudioRecoveryTest 5
 run_test FullNativeEffectsTest 14
 run_test FullShellEngineTest 8
+run_test ShellRoutingGuardTest 2
 run_test DirectServiceLifecycleTest 1
 adb shell ps -A -o ARGS > full-shell-evidence/processes.txt
 if grep -Eq 'app_process .*Shell(TestRelay|RoutingWorker)' full-shell-evidence/processes.txt; then echo 'Leaked routing process'; exit 1; fi
